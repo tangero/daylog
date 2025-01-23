@@ -1,4 +1,5 @@
 import { Suspense, useEffect } from "react";
+import ProfilePage from "./pages/ProfilePage";
 import { useRoutes, Routes, Route } from "react-router-dom";
 import Home from "./components/home";
 import LoginPage from "./pages/LoginPage";
@@ -23,6 +24,14 @@ function App() {
             element={
               <AuthGuard>
                 <Home />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <AuthGuard>
+                <ProfilePage />
               </AuthGuard>
             }
           />

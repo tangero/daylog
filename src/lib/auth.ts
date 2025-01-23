@@ -3,6 +3,8 @@ import { openDB, type DBSchema } from "idb";
 interface User {
   email: string;
   password: string; // In real app, this should be hashed
+  firstName?: string;
+  lastName?: string;
 }
 
 interface AuthDB extends DBSchema {
@@ -61,9 +63,69 @@ export const initializeAuth = async () => {
     const defaultUser = await db.get("users", "demo@example.com");
 
     if (!defaultUser) {
-      await registerUser("demo@example.com", "demo123");
+      await db.put("users", {
+        email: "demo@example.com",
+        password: "demo123",
+        firstName: "Demo",
+        lastName: "User",
+      });
     }
   } catch (error) {
     console.error("Failed to initialize auth:", error);
+  }
+};
+
+export const getUserProfile = async (email: string) => {
+  const db = await initAuthDB();
+  const user = await db.get("users", email);
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  return {
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+  };
+};
+
+export const updateUserProfile = async ({
+  email,
+  firstName,
+  lastName,
+  currentPassword,
+  newPassword,
+}: {
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  currentPassword?: string;
+  newPassword?: string;
+}) => {
+  const db = await initAuthDB();
+  const user = await db.get("users", getCurrentUser() || "");
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  if (currentPassword && newPassword) {
+    if (user.password !== currentPassword) {
+      throw new Error("Nesprávné současné heslo");
+    }
+  }
+
+  await db.put("users", {
+    ...user,
+    email,
+    firstName,
+    lastName,
+    ...(newPassword ? { password: newPassword } : {}),
+  });
+
+  // Update session if email changed
+  if (email !== user.email) {
+    sessionStorage.setItem("user", email);
   }
 };

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import ActivityInput from "./activity/ActivityInput";
 import SearchFilterPanel from "./activity/SearchFilterPanel";
 import ActivityFeed from "./activity/ActivityFeed";
+import Header from "./layout/Header";
 import { parseActivity } from "@/lib/parseActivity";
 import {
   loadActivities,
@@ -175,31 +176,32 @@ const Home = () => {
     });
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 md:p-6 lg:p-8">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <h1 className="text-3xl font-bold text-gray-900">DayLog</h1>
-
-        <ActivityInput
-          onSubmit={
-            editingActivity ? handleUpdateActivity : handleActivitySubmit
-          }
-          placeholder="22 Jan 2025 8:00 30m Testing the #daylog app"
-          defaultValue={editingActivity?.action}
-        />
-
-        <SearchFilterPanel
-          onSearch={handleSearch}
-          onTagSelect={handleTagSelect}
-          popularTags={getPopularTags()}
-        />
-
-        <div className="h-[600px]">
-          <ActivityFeed
-            activities={sortedAndFilteredActivities}
-            onEditActivity={handleEditActivity}
-            onDeleteActivity={handleDeleteActivity}
-            onTagClick={handleTagSelect}
+    <div className="min-h-screen bg-gray-100">
+      <Header />
+      <div className="p-4 md:p-6 lg:p-8">
+        <div className="max-w-6xl mx-auto space-y-6">
+          <ActivityInput
+            onSubmit={
+              editingActivity ? handleUpdateActivity : handleActivitySubmit
+            }
+            placeholder="22 Jan 2025 8:00 30m Testing the #daylog app"
+            defaultValue={editingActivity?.action}
           />
+
+          <SearchFilterPanel
+            onSearch={handleSearch}
+            onTagSelect={handleTagSelect}
+            popularTags={getPopularTags()}
+          />
+
+          <div className="h-[600px]">
+            <ActivityFeed
+              activities={sortedAndFilteredActivities}
+              onEditActivity={handleEditActivity}
+              onDeleteActivity={handleDeleteActivity}
+              onTagClick={handleTagSelect}
+            />
+          </div>
         </div>
       </div>
     </div>
