@@ -7,10 +7,26 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
-import { logoutUser } from "@/lib/auth";
+import { logoutUser, getCurrentUser, getUserProfile } from "@/lib/auth";
+import { useEffect, useState } from "react";
 
 export default function Header() {
   const navigate = useNavigate();
+  const [profile, setProfile] = useState<{
+    firstName?: string;
+    lastName?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      const currentUser = getCurrentUser();
+      if (currentUser) {
+        const userProfile = await getUserProfile(currentUser);
+        setProfile(userProfile);
+      }
+    };
+    loadProfile();
+  }, []);
 
   const handleLogout = () => {
     logoutUser();
@@ -20,7 +36,12 @@ export default function Header() {
   return (
     <header className="border-b bg-white">
       <div className="flex items-center justify-between p-4 max-w-6xl mx-auto">
-        <h1 className="text-xl font-bold">DayLog</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-xl font-bold">DayLog</h1>
+          <span className="text-xl font-bold text-muted-foreground">
+            {profile?.firstName} {profile?.lastName}
+          </span>
+        </div>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

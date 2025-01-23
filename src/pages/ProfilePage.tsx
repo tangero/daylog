@@ -3,6 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { getCurrentUser, updateUserProfile, getUserProfile } from "@/lib/auth";
 import { useNavigate } from "react-router-dom";
 
@@ -10,6 +17,7 @@ export default function ProfilePage() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showSuccess, setShowSuccess] = useState(false);
   const [profile, setProfile] = useState({
     firstName: "",
     lastName: "",
@@ -67,6 +75,8 @@ export default function ProfilePage() {
         newPassword: "",
         confirmPassword: "",
       }));
+
+      setShowSuccess(true);
     } catch (err) {
       setError(
         err instanceof Error
@@ -175,6 +185,17 @@ export default function ProfilePage() {
             </Button>
           </form>
         </Card>
+
+        <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Změny byly uloženy</DialogTitle>
+              <DialogDescription>
+                Vaše změny v profilu byly úspěšně uloženy.
+              </DialogDescription>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
