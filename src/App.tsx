@@ -2,6 +2,7 @@ import { Suspense, useEffect } from "react";
 import { useRoutes, Routes, Route } from "react-router-dom";
 import Home from "./components/home";
 import LoginPage from "./pages/LoginPage";
+import RecoveryPage from "./pages/RecoveryPage";
 import AuthGuard from "./components/auth/AuthGuard";
 import { initializeAuth } from "./lib/auth";
 import routes from "tempo-routes";
@@ -16,6 +17,7 @@ function App() {
       <>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/recovery" element={<RecoveryPage />} />
           <Route
             path="/"
             element={

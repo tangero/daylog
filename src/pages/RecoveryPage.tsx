@@ -1,25 +1,20 @@
-import RecoveryForm from "@/components/auth/RecoveryForm";
-import { generateRecoveryCodeForUser, resetPasswordWithCode } from "@/lib/auth";
-import { useToast } from "@/components/ui/use-toast";
+import { useNavigate } from "react-router-dom";
 
 export default function RecoveryPage() {
-  const { toast } = useToast();
-
-  const handleGenerateCode = async (email: string) => {
-    const code = await generateRecoveryCodeForUser(email);
-    toast({
-      title: "Recovery Code Generated",
-      description: `Your recovery code is: ${code}\nPlease save this code as it will be needed to reset your password.`,
-      duration: 30000, // 30 seconds
-    });
-  };
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      <RecoveryForm
-        onGenerateCode={handleGenerateCode}
-        onRecovery={resetPasswordWithCode}
-      />
+      <div className="text-center">
+        <h1 className="text-2xl font-bold mb-4">Password Recovery</h1>
+        <p className="mb-4">Password recovery is not available in this demo.</p>
+        <button
+          onClick={() => navigate("/login")}
+          className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90"
+        >
+          Back to Login
+        </button>
+      </div>
     </div>
   );
 }
