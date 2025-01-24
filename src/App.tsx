@@ -4,6 +4,8 @@ import { useRoutes, Routes, Route } from "react-router-dom";
 import Home from "./components/home";
 import LoginPage from "./pages/LoginPage";
 import RecoveryPage from "./pages/RecoveryPage";
+import RegisterPage from "./pages/RegisterPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import LandingPage from "./pages/LandingPage";
 import AuthGuard from "./components/auth/AuthGuard";
 import { initializeAuth } from "./lib/auth";

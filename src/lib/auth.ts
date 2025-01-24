@@ -5,6 +5,7 @@ interface User {
   password: string; // In real app, this should be hashed
   firstName?: string;
   lastName?: string;
+  verified?: boolean;
 }
 
 interface AuthDB extends DBSchema {
@@ -46,12 +47,6 @@ export const loginUser = async (email: string, password: string) => {
 
   if (!user.verified) {
     throw new Error("Prosím ověřte svůj email před přihlášením");
-  }
-  const db = await initAuthDB();
-  const user = await db.get("users", email);
-
-  if (!user || user.password !== password) {
-    throw new Error("Invalid email or password");
   }
 
   // Store session
