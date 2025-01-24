@@ -4,6 +4,7 @@ import { useRoutes, Routes, Route } from "react-router-dom";
 import Home from "./components/home";
 import LoginPage from "./pages/LoginPage";
 import RecoveryPage from "./pages/RecoveryPage";
+import LandingPage from "./pages/LandingPage";
 import AuthGuard from "./components/auth/AuthGuard";
 import { initializeAuth } from "./lib/auth";
 import routes from "tempo-routes";
@@ -24,9 +25,13 @@ function App() {
           <Route
             path="/"
             element={
-              <AuthGuard>
-                <Home />
-              </AuthGuard>
+              localStorage.getItem("user") ? (
+                <AuthGuard>
+                  <Home />
+                </AuthGuard>
+              ) : (
+                <LandingPage />
+              )
             }
           />
           <Route
