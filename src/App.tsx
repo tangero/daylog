@@ -1,5 +1,6 @@
 import { Suspense, useEffect } from "react";
 import ProfilePage from "./pages/ProfilePage";
+import ChangelogPage from "./pages/ChangelogPage";
 import { useRoutes, Routes, Route } from "react-router-dom";
 import Home from "./components/home";
 import LoginPage from "./pages/LoginPage";
@@ -49,6 +50,7 @@ function App() {
               </AuthGuard>
             }
           />
+          <Route path="/changelog" element={<ChangelogPage />} />
         </Routes>
         {import.meta.env.VITE_TEMPO === "true" && useRoutes(routes)}
       </>

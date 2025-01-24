@@ -173,7 +173,7 @@ export default function LandingPage() {
               </div>
               <span className="text-gray-400">v1.0.2</span>
               <a
-                href="https://github.com/TempoLabsAI/daylog/blob/main/CHANGELOG.md"
+                href="/changelog"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary hover:text-primary/80 text-sm"

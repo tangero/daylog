@@ -62,16 +62,15 @@ export default function RegisterPage() {
         }),
       });
 
-      const responseText = await response.text();
+      const responseData = await response.json();
       console.log("Registration response:", {
         status: response.status,
         statusText: response.statusText,
-        body: responseText,
+        data: responseData,
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || "Registrace selhala");
+        throw new Error(responseData.message || "Registrace selhala");
       }
 
       // Pokud vše proběhlo úspěšně, přesměrujeme na stránku s informací o ověření
