@@ -9,7 +9,7 @@ interface Env {
   DB: D1Database;
 }
 
-// Pro debugování
+// Pro debugování zde
 function logError(error: any, context: string = "") {
   console.error(`Registration Error ${context}:`, {
     message: error.message,
