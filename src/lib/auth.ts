@@ -62,7 +62,7 @@ export const loginUser = async (email: string, password: string) => {
 };
 
 export const logoutUser = () => {
-  sessionStorage.removeItem("user");
+  localStorage.removeItem("user");
 };
 
 export const getCurrentUser = () => {

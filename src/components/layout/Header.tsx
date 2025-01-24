@@ -18,14 +18,14 @@ export default function Header() {
   } | null>(null);
 
   useEffect(() => {
-    const loadProfile = async () => {
-      const currentUser = getCurrentUser();
-      if (currentUser) {
-        const userProfile = await getUserProfile(currentUser);
-        setProfile(userProfile);
-      }
-    };
-    loadProfile();
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      setProfile({
+        firstName: user.firstName,
+        lastName: user.lastName,
+      });
+    }
   }, []);
 
   const handleLogout = () => {

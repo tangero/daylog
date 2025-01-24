@@ -35,13 +35,9 @@ function App() {
           <Route
             path="/"
             element={
-              localStorage.getItem("user") ? (
-                <AuthGuard>
-                  <Home />
-                </AuthGuard>
-              ) : (
-                <LandingPage />
-              )
+              <AuthGuard>
+                <Home />
+              </AuthGuard>
             }
           />
           <Route
