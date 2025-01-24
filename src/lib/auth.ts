@@ -38,19 +38,27 @@ export const registerUser = async (email: string, password: string) => {
 };
 
 export const loginUser = async (email: string, password: string) => {
-  const db = await initAuthDB();
-  const user = await db.get("users", email);
+  try {
+    const response = await fetch("/api/auth", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
 
-  if (!user || user.password !== password) {
-    throw new Error("Neplatné přihlašovací údaje");
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText);
+    }
+
+    const userData = await response.json();
+    // Store session
+    localStorage.setItem("user", JSON.stringify(userData));
+  } catch (error) {
+    console.error("Login error:", error);
+    throw new Error(
+      error instanceof Error ? error.message : "Neplatné přihlašovací údaje",
+    );
   }
-
-  if (!user.verified) {
-    throw new Error("Prosím ověřte svůj email před přihlášením");
-  }
-
-  // Store session
-  sessionStorage.setItem("user", email);
 };
 
 export const logoutUser = () => {
