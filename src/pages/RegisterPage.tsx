@@ -35,17 +35,7 @@ export default function RegisterPage() {
         throw new Error("Hesla se neshodují");
       }
 
-      // Nejprve zkontrolujeme, jestli uživatel již neexistuje
-      const checkResponse = await fetch(
-        `/api/auth?email=${encodeURIComponent(email)}`,
-        {
-          method: "GET",
-        },
-      );
-
-      if (checkResponse.ok) {
-        throw new Error("Uživatel s tímto emailem již existuje");
-      }
+      // Kontrola existence uživatele se přesunula na backend
 
       // Pokud uživatel neexistuje, vytvoříme nový záznam
       console.log("Sending registration request");
