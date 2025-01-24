@@ -17,14 +17,17 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     }
 
     // Get user and check if already verified
-    const stmt = await env.DB.prepare(
+    const { results } = await env.DB.prepare(
       "SELECT verification_token, verified, first_name FROM users WHERE email = ?",
-    );
-    const user = await (await stmt.bind(email)).first();
+    )
+      .bind(email)
+      .all();
 
-    if (!user) {
+    if (results.length === 0) {
       return new Response("User not found", { status: 404 });
     }
+
+    const user = results[0];
 
     if (user.verified) {
       return new Response("Email is already verified", { status: 400 });
@@ -33,10 +36,15 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     // Generate new verification token if none exists
     const verificationToken = user.verification_token || crypto.randomUUID();
     if (!user.verification_token) {
-      const updateStmt = await env.DB.prepare(
+      const result = await env.DB.prepare(
         "UPDATE users SET verification_token = ? WHERE email = ?",
-      );
-      await (await updateStmt.bind(verificationToken, email)).run();
+      )
+        .bind(verificationToken, email)
+        .run();
+
+      if (!result.success) {
+        throw new Error("Failed to update verification token");
+      }
     }
 
     // Send verification email
@@ -65,6 +73,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
     return new Response(null, { status: 200 });
   } catch (error) {
+    console.error("Resend verification error:", error);
     return new Response(
       error instanceof Error
         ? error.message
