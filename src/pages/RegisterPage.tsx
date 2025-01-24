@@ -48,6 +48,7 @@ export default function RegisterPage() {
       }
 
       // Pokud uživatel neexistuje, vytvoříme nový záznam
+      console.log("Sending registration request");
       const response = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -59,6 +60,13 @@ export default function RegisterPage() {
           verified: false, // explicitně nastavíme jako neověřený
           verification_token: crypto.randomUUID(), // vygenerujeme token pro ověření
         }),
+      });
+
+      const responseText = await response.text();
+      console.log("Registration response:", {
+        status: response.status,
+        statusText: response.statusText,
+        body: responseText,
       });
 
       if (!response.ok) {

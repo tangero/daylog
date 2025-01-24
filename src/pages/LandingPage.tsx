@@ -166,9 +166,20 @@ export default function LandingPage() {
       <footer className="bg-gray-50">
         <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
-            <div className="flex items-center">
-              <Clock className="h-6 w-6 text-gray-400 mr-2" />
-              <span className="text-gray-400">DayLog</span>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center">
+                <Clock className="h-6 w-6 text-gray-400 mr-2" />
+                <span className="text-gray-400">DayLog</span>
+              </div>
+              <span className="text-gray-400">v1.0.2</span>
+              <a
+                href="https://github.com/TempoLabsAI/daylog/blob/main/CHANGELOG.md"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:text-primary/80 text-sm"
+              >
+                Changelog
+              </a>
             </div>
             <p className="text-gray-400 text-sm">
               © {new Date().getFullYear()} DayLog. Všechna práva vyhrazena.

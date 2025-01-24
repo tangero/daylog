@@ -9,6 +9,15 @@ interface Env {
   DB: D1Database;
 }
 
+// Pro debugování
+function logError(error: any, context: string = "") {
+  console.error(`Registration Error ${context}:`, {
+    message: error.message,
+    cause: error.cause,
+    stack: error.stack,
+  });
+}
+
 export const onRequest: PagesFunction<Env> = async (context) => {
   const { request, env } = context;
 
@@ -16,8 +25,15 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     return new Response("Method not allowed", { status: 405 });
   }
 
+  console.log("Starting registration process");
+
   try {
-    const { email, password, firstName, lastName } = await request.json();
+    const data = await request.json();
+    console.log("Received registration data:", {
+      ...data,
+      password: "[REDACTED]",
+    });
+    const { email, password, firstName, lastName } = data;
 
     // Validace vstupů
     if (!email || !password || !firstName || !lastName) {
@@ -25,11 +41,17 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     }
 
     // Kontrola, zda uživatel již existuje
-    const existingUser = await env.DB.prepare(
-      "SELECT email FROM users WHERE email = ?",
-    )
-      .bind(email)
-      .first();
+    console.log("Checking for existing user");
+    let existingUser;
+    try {
+      const stmt = env.DB.prepare("SELECT email FROM users WHERE email = ?");
+      console.log("Prepared statement:", stmt);
+      existingUser = await stmt.bind(email).first();
+      console.log("Existing user check result:", existingUser);
+    } catch (error) {
+      logError(error, "checking existing user");
+      throw error;
+    }
 
     if (existingUser) {
       return new Response("Uživatel s tímto emailem již existuje", {
@@ -38,21 +60,30 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     }
 
     // Vytvoření nového uživatele
+    console.log("Creating new user");
     const hashedPassword = await hashPassword(password);
     const verificationToken = crypto.randomUUID();
 
-    const result = await env.DB.prepare(
-      `INSERT INTO users (email, password, first_name, last_name, verification_token, verified) 
-       VALUES (?, ?, ?, ?, ?, false)`,
-    )
-      .bind(email, hashedPassword, firstName, lastName, verificationToken)
-      .run();
+    try {
+      const result = await env.DB.prepare(
+        `INSERT INTO users (email, password, first_name, last_name, verification_token, verified) 
+         VALUES (?, ?, ?, ?, ?, false)`,
+      )
+        .bind(email, hashedPassword, firstName, lastName, verificationToken)
+        .run();
 
-    if (!result.success) {
-      throw new Error("Chyba při vytváření uživatele");
+      console.log("Insert result:", result);
+
+      if (!result.success) {
+        throw new Error("Chyba při vytváření uživatele");
+      }
+    } catch (error) {
+      logError(error, "inserting new user");
+      throw error;
     }
 
     // Odeslání ověřovacího emailu
+    console.log("Sending verification email");
     const verificationUrl = `${new URL(request.url).origin}/verify-email?token=${verificationToken}`;
 
     try {
@@ -74,6 +105,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       // Pokračujeme i když se nepodaří odeslat email
     }
 
+    console.log("Registration completed successfully");
     return new Response(
       JSON.stringify({
         success: true,
@@ -86,7 +118,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       },
     );
   } catch (error) {
-    console.error("Registration error:", error);
+    logError(error, "registration process");
     return new Response(
       JSON.stringify({
         success: false,
