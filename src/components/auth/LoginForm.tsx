@@ -37,7 +37,7 @@ export default function LoginForm({
   return (
     <Card className="w-full max-w-md p-6 space-y-6 bg-white">
       <div className="space-y-2 text-center">
-        <h1 className="text-3xl font-bold">Welcome to DayLog</h1>
+        <h1 className="text-3xl font-bold">Welcome to progressor.work</h1>
         <p className="text-gray-500">Please sign in to continue</p>
       </div>
 

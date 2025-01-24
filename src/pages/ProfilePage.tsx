@@ -10,7 +10,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { getCurrentUser, updateUserProfile, getUserProfile } from "@/lib/auth";
+import { updateUserProfile } from "@/lib/auth";
 import { useNavigate } from "react-router-dom";
 
 export default function ProfilePage() {
@@ -28,23 +28,19 @@ export default function ProfilePage() {
   });
 
   useEffect(() => {
-    const loadProfile = async () => {
-      const currentUser = getCurrentUser();
-      if (!currentUser) {
-        navigate("/login");
-        return;
-      }
+    const userStr = localStorage.getItem("user");
+    if (!userStr) {
+      navigate("/login");
+      return;
+    }
 
-      const userProfile = await getUserProfile(currentUser);
-      setProfile((prev) => ({
-        ...prev,
-        firstName: userProfile.firstName || "",
-        lastName: userProfile.lastName || "",
-        email: userProfile.email,
-      }));
-    };
-
-    loadProfile();
+    const user = JSON.parse(userStr);
+    setProfile((prev) => ({
+      ...prev,
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
+      email: user.email,
+    }));
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {

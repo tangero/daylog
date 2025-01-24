@@ -13,7 +13,7 @@ export default function LandingPage() {
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
               <Clock className="h-8 w-8 text-primary mr-2" />
-              <span className="text-2xl font-bold">DayLog</span>
+              <span className="text-2xl font-bold">progressor.work</span>
             </div>
             <div className="flex items-center space-x-4">
               <Button variant="ghost" onClick={() => navigate("/login")}>
@@ -169,7 +169,7 @@ export default function LandingPage() {
             <div className="flex items-center space-x-4">
               <div className="flex items-center">
                 <Clock className="h-6 w-6 text-gray-400 mr-2" />
-                <span className="text-gray-400">DayLog</span>
+                <span className="text-gray-400">progressor.work</span>
               </div>
               <span className="text-gray-400">v1.0.2</span>
               <a
@@ -182,7 +182,8 @@ export default function LandingPage() {
               </a>
             </div>
             <p className="text-gray-400 text-sm">
-              © {new Date().getFullYear()} DayLog. Všechna práva vyhrazena.
+              © {new Date().getFullYear()} progressor.work. Všechna práva
+              vyhrazena.
             </p>
           </div>
         </div>

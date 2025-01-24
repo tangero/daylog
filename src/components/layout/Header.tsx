@@ -37,7 +37,7 @@ export default function Header() {
     <header className="border-b bg-white">
       <div className="flex items-center justify-between p-4 max-w-6xl mx-auto">
         <div className="flex items-center gap-2">
-          <h1 className="text-xl font-bold">DayLog</h1>
+          <h1 className="text-xl font-bold">progressor.work</h1>
           <span className="text-xl font-bold text-muted-foreground">
             {profile?.firstName} {profile?.lastName}
           </span>
