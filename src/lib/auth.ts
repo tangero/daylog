@@ -41,6 +41,16 @@ export const loginUser = async (email: string, password: string) => {
   const user = await db.get("users", email);
 
   if (!user || user.password !== password) {
+    throw new Error("Neplatné přihlašovací údaje");
+  }
+
+  if (!user.verified) {
+    throw new Error("Prosím ověřte svůj email před přihlášením");
+  }
+  const db = await initAuthDB();
+  const user = await db.get("users", email);
+
+  if (!user || user.password !== password) {
     throw new Error("Invalid email or password");
   }
 
