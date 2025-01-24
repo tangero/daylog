@@ -116,29 +116,55 @@ export const updateUserProfile = async ({
   currentPassword?: string;
   newPassword?: string;
 }) => {
-  const db = await initAuthDB();
-  const user = await db.get("users", getCurrentUser() || "");
+  try {
+    // If changing password, verify current password first
+    if (currentPassword && newPassword) {
+      const verifyResponse = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password: currentPassword }),
+      });
 
-  if (!user) {
-    throw new Error("User not found");
-  }
-
-  if (currentPassword && newPassword) {
-    if (user.password !== currentPassword) {
-      throw new Error("Nesprávné současné heslo");
+      if (!verifyResponse.ok) {
+        throw new Error("Nesprávné současné heslo");
+      }
     }
-  }
 
-  await db.put("users", {
-    ...user,
-    email,
-    firstName,
-    lastName,
-    ...(newPassword ? { password: newPassword } : {}),
-  });
+    // Update user profile
+    const response = await fetch("/api/profile", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email,
+        firstName,
+        lastName,
+        ...(newPassword ? { password: newPassword } : {}),
+      }),
+    });
 
-  // Update session if email changed
-  if (email !== user.email) {
-    sessionStorage.setItem("user", email);
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText);
+    }
+
+    // Update local storage with new user data
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      const userData = JSON.parse(userStr);
+      const updatedUser = {
+        ...userData,
+        email,
+        firstName,
+        lastName,
+      };
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+    }
+  } catch (error) {
+    console.error("Update profile error:", error);
+    throw new Error(
+      error instanceof Error
+        ? error.message
+        : "Nepodařilo se aktualizovat profil",
+    );
   }
 };
