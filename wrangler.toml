@@ -1,7 +1,20 @@
 name = "daylog"
-compatibility_date = "2024-01-24"
+compatibility_date = "2024-01-01"
 
 [[d1_databases]]
 binding = "DB"
 database_name = "daylog-db"
 database_id = "307c4541-8352-4d21-81bc-b7a9105a16f3"
+
+[build]
+command = "npm run build"
+upload.format = "service-worker"
+
+[site]
+bucket = "./dist"
+entry-point = "functions"
+
+[env.production]
+routes = [
+  { pattern = "/api/*", zone_name = "tempolabs.ai" }
+]

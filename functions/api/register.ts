@@ -21,6 +21,19 @@ function logError(error: any, context: string = "") {
 export const onRequest: PagesFunction<Env> = async (context) => {
   const { request, env } = context;
 
+  // Debug log pro ověření připojení k DB
+  console.log("DB binding:", env.DB);
+
+  // Test DB připojení
+  try {
+    const tables = await env.DB.prepare(
+      "SELECT name FROM sqlite_master WHERE type='table';",
+    ).all();
+    console.log("Available tables:", tables);
+  } catch (error) {
+    console.error("Error checking DB:", error);
+  }
+
   if (request.method !== "POST") {
     return new Response(
       JSON.stringify({
