@@ -4,14 +4,19 @@ interface Env {
 
 export const onRequest: PagesFunction<Env> = async (context) => {
   const { request, env } = context;
-  const url = new URL(request.url);
-  const token = url.searchParams.get("token");
 
-  if (!token) {
-    return new Response("Invalid verification token", { status: 400 });
+  if (request.method !== "POST") {
+    return new Response("Method not allowed", { status: 405 });
   }
 
   try {
+    const { token } = await request.json();
+
+    if (!token) {
+      return new Response("Token is required", { status: 400 });
+    }
+
+    // Update user and get their email
     const result = await env.DB.prepare(
       "UPDATE users SET verified = TRUE, verification_token = NULL WHERE verification_token = ? RETURNING email",
     )
@@ -24,9 +29,12 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       });
     }
 
-    // Redirect to login page with success message
-    return Response.redirect(`${url.origin}/login?verified=true`);
+    return new Response(null, { status: 200 });
   } catch (error) {
-    return new Response(error.message, { status: 500 });
+    console.error("Email verification error:", error);
+    return new Response(
+      error instanceof Error ? error.message : "Failed to verify email",
+      { status: 500 },
+    );
   }
 };

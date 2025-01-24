@@ -6,6 +6,7 @@ import Home from "./components/home";
 import LoginPage from "./pages/LoginPage";
 import RecoveryPage from "./pages/RecoveryPage";
 import RegisterPage from "./pages/RegisterPage";
+import EmailVerificationPage from "./pages/EmailVerificationPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import VerificationPendingPage from "./pages/VerificationPendingPage";
 import LandingPage from "./pages/LandingPage";
@@ -30,6 +31,7 @@ function App() {
           />
           <Route path="/recovery" element={<RecoveryPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/verify-email" element={<EmailVerificationPage />} />
           <Route
             path="/"
             element={

@@ -36,7 +36,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           to: email,
-          subject: "Reset hesla - DayLog",
+          subject: "Reset hesla - Progressor",
           html: `
             <h1>Reset hesla</h1>
             <p>Pro reset hesla klikněte na následující odkaz:</p>
