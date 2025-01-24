@@ -8,13 +8,9 @@ database_id = "307c4541-8352-4d21-81bc-b7a9105a16f3"
 
 [build]
 command = "npm run build"
-upload.format = "service-worker"
 
 [site]
 bucket = "./dist"
-entry-point = "functions"
 
-[env.production]
-routes = [
-  { pattern = "/api/*", zone_name = "tempolabs.ai" }
-]
+[pages]
+pages_build_output_dir = "dist"
