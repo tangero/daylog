@@ -17,11 +17,10 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     }
 
     // Get user and check if already verified
-    const user = await env.DB.prepare(
+    const stmt = await env.DB.prepare(
       "SELECT verification_token, verified, first_name FROM users WHERE email = ?",
-    )
-      .bind(email)
-      .first();
+    );
+    const user = await (await stmt.bind(email)).first();
 
     if (!user) {
       return new Response("User not found", { status: 404 });
@@ -34,11 +33,10 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     // Generate new verification token if none exists
     const verificationToken = user.verification_token || crypto.randomUUID();
     if (!user.verification_token) {
-      await env.DB.prepare(
+      const updateStmt = await env.DB.prepare(
         "UPDATE users SET verification_token = ? WHERE email = ?",
-      )
-        .bind(verificationToken, email)
-        .run();
+      );
+      await (await updateStmt.bind(verificationToken, email)).run();
     }
 
     // Send verification email
