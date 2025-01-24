@@ -15,7 +15,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   try {
     if (request.method === "POST") {
       const { email, password } = await request.json();
-      const hashedPassword = hashPassword(password);
+      const hashedPassword = await hashPassword(password);
 
       const { results } = await env.DB.prepare(
         "SELECT * FROM users WHERE email = ? AND password = ?",
@@ -27,16 +27,23 @@ export const onRequest: PagesFunction<Env> = async (context) => {
         return new Response("Invalid credentials", { status: 401 });
       }
 
-      // V produkci byste zde měli použít JWT nebo jiný bezpečný token systém
+      const user = results[0];
+      if (!user.verified) {
+        return new Response("Please verify your email before logging in", {
+          status: 401,
+        });
+      }
+
       return Response.json({
-        email: results[0].email,
-        firstName: results[0].first_name,
-        lastName: results[0].last_name,
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
       });
     }
 
     return new Response("Method not allowed", { status: 405 });
   } catch (error) {
+    console.error("Auth error:", error);
     return new Response(error.message, { status: 500 });
   }
 };

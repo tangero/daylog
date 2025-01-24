@@ -132,9 +132,9 @@ export const onRequest: PagesFunction<Env> = async (context) => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             to: email,
-            subject: "Ověření emailu - DayLog",
+            subject: "Ověření emailu - Progressor",
             html: `
-            <h1>Vítejte v DayLog, ${firstName}!</h1>
+            <h1>Vítejte v Progressor, ${firstName}!</h1>
             <p>Pro dokončení registrace prosím ověřte svůj email kliknutím na následující odkaz:</p>
             <p><a href="${verificationUrl}">Ověřit email</a></p>
           `,
