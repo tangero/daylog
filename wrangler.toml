@@ -1,0 +1,7 @@
+name = "daylog"
+compatibility_date = "2024-01-24"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "daylog-db"
+database_id = ""  # Toto ID dostanete po vytvoření D1 databáze
