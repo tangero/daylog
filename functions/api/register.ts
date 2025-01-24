@@ -22,7 +22,16 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   const { request, env } = context;
 
   if (request.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
+    return new Response(
+      JSON.stringify({
+        success: false,
+        message: "Method not allowed",
+      }),
+      {
+        status: 405,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
   }
 
   console.log("Starting registration process");
@@ -37,7 +46,16 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
     // Validace vstupů
     if (!email || !password || !firstName || !lastName) {
-      return new Response("Všechna pole jsou povinná", { status: 400 });
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: "Všechna pole jsou povinná",
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
     }
 
     // Kontrola, zda uživatel již existuje
@@ -54,9 +72,16 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     }
 
     if (existingUser) {
-      return new Response("Uživatel s tímto emailem již existuje", {
-        status: 400,
-      });
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: "Uživatel s tímto emailem již existuje",
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
     }
 
     // Vytvoření nového uživatele
