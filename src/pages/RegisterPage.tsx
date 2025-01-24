@@ -64,7 +64,7 @@ export default function RegisterPage() {
       }
 
       // Pokud vše proběhlo úspěšně, přesměrujeme na stránku s informací o ověření
-      navigate("/verification-pending");
+      navigate(`/verification-pending?email=${encodeURIComponent(email)}`);
     } catch (err) {
       console.error("Registration error:", err);
       setError(err instanceof Error ? err.message : "Registrace selhala");
