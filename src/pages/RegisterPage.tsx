@@ -45,7 +45,7 @@ export default function RegisterPage() {
         throw new Error(await response.text());
       }
 
-      navigate("/login");
+      navigate("/verification-pending");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registrace selhala");
     } finally {

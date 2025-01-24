@@ -6,6 +6,7 @@ import LoginPage from "./pages/LoginPage";
 import RecoveryPage from "./pages/RecoveryPage";
 import RegisterPage from "./pages/RegisterPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import VerificationPendingPage from "./pages/VerificationPendingPage";
 import LandingPage from "./pages/LandingPage";
 import AuthGuard from "./components/auth/AuthGuard";
 import { initializeAuth } from "./lib/auth";
@@ -22,6 +23,10 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route
+            path="/verification-pending"
+            element={<VerificationPendingPage />}
+          />
           <Route path="/recovery" element={<RecoveryPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route
