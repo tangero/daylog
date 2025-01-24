@@ -3,13 +3,16 @@ interface Env {
   RESEND_API_KEY: string;
 }
 
+const RESEND_API_URL = "https://api.resend.com/emails";
+
 async function sendEmail(
   apiKey: string,
   to: string,
   subject: string,
   html: string,
 ) {
-  const response = await fetch("https://api.resend.com/emails", {
+  console.log("Sending email with Resend...");
+  const response = await fetch(RESEND_API_URL, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -24,8 +27,12 @@ async function sendEmail(
   });
 
   if (!response.ok) {
-    throw new Error("Failed to send email");
+    const errorText = await response.text();
+    console.error("Resend API error:", errorText);
+    throw new Error(`Failed to send email: ${errorText}`);
   }
+
+  console.log("Email sent successfully");
 
   return response.json();
 }

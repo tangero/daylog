@@ -125,19 +125,28 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     const verificationUrl = `${new URL(request.url).origin}/verify-email?token=${verificationToken}`;
 
     try {
-      await fetch("/api/email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          to: email,
-          subject: "Ověření emailu - DayLog",
-          html: `
+      const emailResponse = await fetch(
+        `${new URL(request.url).origin}/api/email`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            to: email,
+            subject: "Ověření emailu - DayLog",
+            html: `
             <h1>Vítejte v DayLog, ${firstName}!</h1>
             <p>Pro dokončení registrace prosím ověřte svůj email kliknutím na následující odkaz:</p>
             <p><a href="${verificationUrl}">Ověřit email</a></p>
           `,
-        }),
-      });
+          }),
+        },
+      );
+
+      if (!emailResponse.ok) {
+        const errorText = await emailResponse.text();
+        console.error("Failed to send verification email:", errorText);
+        throw new Error(`Failed to send verification email: ${errorText}`);
+      }
     } catch (error) {
       console.error("Failed to send verification email:", error);
       // Pokračujeme i když se nepodaří odeslat email
