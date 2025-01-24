@@ -19,67 +19,83 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   try {
     const { email, password, firstName, lastName } = await request.json();
 
-    // Check if user already exists
-    const { results } = await env.DB.prepare(
+    // Validace vstupů
+    if (!email || !password || !firstName || !lastName) {
+      return new Response("Všechna pole jsou povinná", { status: 400 });
+    }
+
+    // Kontrola, zda uživatel již existuje
+    const existingUser = await env.DB.prepare(
       "SELECT email FROM users WHERE email = ?",
     )
       .bind(email)
-      .all();
+      .first();
 
-    if (results.length > 0) {
+    if (existingUser) {
       return new Response("Uživatel s tímto emailem již existuje", {
         status: 400,
       });
     }
 
-    // Create new user with verification token
-    const hashedPassword = hashPassword(password);
+    // Vytvoření nového uživatele
+    const hashedPassword = await hashPassword(password);
     const verificationToken = crypto.randomUUID();
 
-    await env.DB.prepare(
-      "INSERT INTO users (email, password, first_name, last_name, verification_token) VALUES (?, ?, ?, ?, ?)",
+    const result = await env.DB.prepare(
+      `INSERT INTO users (email, password, first_name, last_name, verification_token, verified) 
+       VALUES (?, ?, ?, ?, ?, false)`,
     )
       .bind(email, hashedPassword, firstName, lastName, verificationToken)
       .run();
 
-    // Send verification email
-    const verificationUrl = `${new URL(request.url).origin}/api/verify-email?token=${verificationToken}`;
-    await fetch("/api/email", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        to: email,
-        subject: "Ověření emailu - DayLog",
-        html: `
-          <h1>Vítejte v DayLog, ${firstName}!</h1>
-          <p>Pro dokončení registrace prosím ověřte svůj email kliknutím na následující odkaz:</p>
-          <p><a href="${verificationUrl}">Ověřit email</a></p>
-        `,
-      }),
-    });
+    if (!result.success) {
+      throw new Error("Chyba při vytváření uživatele");
+    }
 
-    // Send welcome email
+    // Odeslání ověřovacího emailu
+    const verificationUrl = `${new URL(request.url).origin}/verify-email?token=${verificationToken}`;
+
     try {
       await fetch("/api/email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           to: email,
-          subject: "Vítejte v DayLog",
+          subject: "Ověření emailu - DayLog",
           html: `
             <h1>Vítejte v DayLog, ${firstName}!</h1>
-            <p>Váš účet byl úspěšně vytvořen. Můžete se přihlásit na adrese:</p>
-            <p><a href="${request.url.replace("/api/register", "/login")}">Přihlásit se</a></p>
+            <p>Pro dokončení registrace prosím ověřte svůj email kliknutím na následující odkaz:</p>
+            <p><a href="${verificationUrl}">Ověřit email</a></p>
           `,
         }),
       });
     } catch (error) {
-      console.error("Failed to send welcome email:", error);
-      // Continue even if email fails
+      console.error("Failed to send verification email:", error);
+      // Pokračujeme i když se nepodaří odeslat email
     }
 
-    return new Response(null, { status: 201 });
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message:
+          "Registrace proběhla úspěšně. Zkontrolujte svůj email pro ověření účtu.",
+      }),
+      {
+        status: 201,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
   } catch (error) {
-    return new Response(error.message, { status: 500 });
+    console.error("Registration error:", error);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        message: error instanceof Error ? error.message : "Registrace selhala",
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
   }
 };

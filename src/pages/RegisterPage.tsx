@@ -35,18 +35,41 @@ export default function RegisterPage() {
         throw new Error("Hesla se neshodují");
       }
 
+      // Nejprve zkontrolujeme, jestli uživatel již neexistuje
+      const checkResponse = await fetch(
+        `/api/auth?email=${encodeURIComponent(email)}`,
+        {
+          method: "GET",
+        },
+      );
+
+      if (checkResponse.ok) {
+        throw new Error("Uživatel s tímto emailem již existuje");
+      }
+
+      // Pokud uživatel neexistuje, vytvoříme nový záznam
       const response = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, firstName, lastName }),
+        body: JSON.stringify({
+          email,
+          password,
+          firstName,
+          lastName,
+          verified: false, // explicitně nastavíme jako neověřený
+          verification_token: crypto.randomUUID(), // vygenerujeme token pro ověření
+        }),
       });
 
       if (!response.ok) {
-        throw new Error(await response.text());
+        const errorText = await response.text();
+        throw new Error(errorText || "Registrace selhala");
       }
 
+      // Pokud vše proběhlo úspěšně, přesměrujeme na stránku s informací o ověření
       navigate("/verification-pending");
     } catch (err) {
+      console.error("Registration error:", err);
       setError(err instanceof Error ? err.message : "Registrace selhala");
     } finally {
       setIsLoading(false);
