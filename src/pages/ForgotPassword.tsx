@@ -9,6 +9,9 @@ export default function ForgotPassword() {
   const [loading, setLoading] = useState(false)
   const [devUrl, setDevUrl] = useState<string | null>(null)
 
+  // DEV mód pouze na localhost
+  const isDevMode = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -53,8 +56,8 @@ export default function ForgotPassword() {
               </p>
             </div>
 
-            {/* DEV: Reset link pro testování */}
-            {devUrl && (
+            {/* DEV: Reset link pro testování - pouze na localhost */}
+            {isDevMode && devUrl && (
               <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-left">
                 <p className="text-xs text-yellow-800 font-semibold mb-2">
                   DEV MODE - Reset link:

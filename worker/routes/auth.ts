@@ -129,17 +129,24 @@ authRoutes.post('/forgot-password', async (c) => {
     'INSERT INTO password_reset_tokens (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)'
   ).bind(tokenId, user.id, resetToken, expiresAt).run()
 
-  // TODO: Odeslat email s reset linkem
-  // Pro teď logujeme do konzole (v produkci integrovat Resend, SendGrid, apod.)
+  // TODO: Integrovat email službu (Resend, SendGrid, Mailgun)
+  // Pro teď logujeme do konzole
   const resetUrl = `https://progressor.pages.dev/reset-password?token=${resetToken}`
   console.log(`[PASSWORD RESET] Email: ${user.email}, URL: ${resetUrl}`)
 
-  return c.json({
+  // Základní response bez citlivých dat
+  const response: { success: boolean; message: string; _dev?: { resetUrl: string } } = {
     success: true,
-    message: 'Pokud email existuje, obdržíte instrukce pro reset hesla.',
-    // DEV ONLY - v produkci odstranit:
-    _dev: { resetUrl }
-  })
+    message: 'Pokud email existuje, obdržíte instrukce pro reset hesla.'
+  }
+
+  // DEV URL pouze pro localhost requesty (Origin header check)
+  const origin = c.req.header('origin') || ''
+  if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+    response._dev = { resetUrl }
+  }
+
+  return c.json(response)
 })
 
 // Reset hesla s tokenem

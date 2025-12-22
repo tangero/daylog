@@ -214,9 +214,12 @@ export default function Landing() {
       {/* Footer */}
       <footer className="border-t border-gray-200 mt-16">
         <div className="max-w-6xl mx-auto px-4 py-8 text-center text-gray-600">
-          <p className="text-sm">
+          <p className="text-sm mb-2">
             &copy; 2025 Progressor. Jednoduchý nástroj pro zaznamenávání práce.
           </p>
+          <Link to="/changelog" className="text-sm text-primary-600 hover:text-primary-700">
+            Changelog (v0.3.0)
+          </Link>
         </div>
       </footer>
     </div>

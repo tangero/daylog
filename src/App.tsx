@@ -7,6 +7,7 @@ import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import Dashboard from './pages/Dashboard'
 import Stats from './pages/Stats'
+import Changelog from './pages/Changelog'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
@@ -88,6 +89,7 @@ function App() {
           )
         }
       />
+      <Route path="/changelog" element={<Changelog />} />
       <Route
         path="/"
         element={
