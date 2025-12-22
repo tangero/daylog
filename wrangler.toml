@@ -1,0 +1,13 @@
+name = "progressor-api"
+main = "worker/index.ts"
+compatibility_date = "2024-12-18"
+
+# D1 databáze
+[[d1_databases]]
+binding = "DB"
+database_name = "progressor-db"
+database_id = "928f2577-8c9a-480f-898e-d4aca3e7459e"
+
+# Pro lokální vývoj
+[vars]
+JWT_SECRET = "local-dev-secret-change-in-production"
