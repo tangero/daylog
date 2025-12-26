@@ -148,7 +148,7 @@ authRoutes.post('/forgot-password', async (c) => {
     'INSERT INTO password_reset_tokens (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)'
   ).bind(tokenId, user.id, resetToken, expiresAt).run()
 
-  const resetUrl = `https://progressor.pages.dev/reset-password?token=${resetToken}`
+  const resetUrl = `https://progressor.work/reset-password?token=${resetToken}`
 
   // Odeslat email přes Resend API (fetch)
   try {
