@@ -5,6 +5,25 @@ Všechny významné změny v projektu Progressor jsou dokumentovány v tomto sou
 Formát je založen na [Keep a Changelog](https://keepachangelog.com/cs/1.0.0/),
 a projekt dodržuje [Semantic Versioning](https://semver.org/lang/cs/).
 
+## [0.4.0] - 2025-12-26
+
+### Přidáno
+- Odesílání emailů pro reset hesla přes Resend API
+- Emaily odesílány z domény prolnuto.cz
+- HTML šablona pro reset hesla email
+
+### Vylepšeno
+- Přepracovaná CORS implementace pro lepší kompatibilitu
+- Lepší error handling v auth endpointech
+- Deployment přes GitHub (Cloudflare Pages Git integrace)
+
+### Opraveno
+- Oprava autentizace - kompatibilita s Cloudflare Workers
+- Oprava chybějícího JWT_SECRET
+
+### Bezpečnost
+- Secrets (JWT_SECRET, RESEND_API_KEY) uloženy jako encrypted Cloudflare secrets
+
 ## [0.3.0] - 2024-12-22
 
 ### Opraveno
