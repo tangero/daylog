@@ -1,11 +1,13 @@
 import { Hono } from 'hono'
 import { sign } from 'hono/jwt'
 import bcrypt from 'bcryptjs'
+import { Resend } from 'resend'
 import { authRateLimit, passwordResetRateLimit } from '../middleware/rateLimit'
 
 interface Env {
   DB: D1Database
   JWT_SECRET: string
+  RESEND_API_KEY: string
 }
 
 export const authRoutes = new Hono<{ Bindings: Env }>()
@@ -144,24 +146,40 @@ authRoutes.post('/forgot-password', async (c) => {
     'INSERT INTO password_reset_tokens (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)'
   ).bind(tokenId, user.id, resetToken, expiresAt).run()
 
-  // TODO: Integrovat email službu (Resend, SendGrid, Mailgun)
-  // Pro teď logujeme do konzole
   const resetUrl = `https://progressor.pages.dev/reset-password?token=${resetToken}`
-  console.log(`[PASSWORD RESET] Email: ${user.email}, URL: ${resetUrl}`)
 
-  // Základní response bez citlivých dat
-  const response: { success: boolean; message: string; _dev?: { resetUrl: string } } = {
+  // Odeslat email přes Resend
+  try {
+    const resend = new Resend(c.env.RESEND_API_KEY)
+    await resend.emails.send({
+      from: 'Progressor <noreply@prolnuto.cz>',
+      to: user.email,
+      subject: 'Reset hesla - Progressor',
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #4F46E5;">Reset hesla</h2>
+          <p>Obdrželi jsme žádost o reset hesla pro váš účet v aplikaci Progressor.</p>
+          <p>Klikněte na tlačítko níže pro nastavení nového hesla:</p>
+          <a href="${resetUrl}" style="display: inline-block; background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0;">
+            Resetovat heslo
+          </a>
+          <p style="color: #666; font-size: 14px;">Odkaz je platný 1 hodinu.</p>
+          <p style="color: #666; font-size: 14px;">Pokud jste o reset hesla nežádali, tento email ignorujte.</p>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
+          <p style="color: #999; font-size: 12px;">Progressor - sledování aktivit</p>
+        </div>
+      `,
+    })
+    console.log(`[PASSWORD RESET] Email sent to: ${user.email}`)
+  } catch (error) {
+    console.error('[PASSWORD RESET] Failed to send email:', error)
+    // Nevrátíme chybu uživateli - token je vytvořen, ale email se nepodařilo odeslat
+  }
+
+  return c.json({
     success: true,
     message: 'Pokud email existuje, obdržíte instrukce pro reset hesla.'
-  }
-
-  // DEV URL pouze pro localhost requesty (Origin header check)
-  const origin = c.req.header('origin') || ''
-  if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
-    response._dev = { resetUrl }
-  }
-
-  return c.json(response)
+  })
 })
 
 // Reset hesla s tokenem
