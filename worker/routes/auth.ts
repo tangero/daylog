@@ -1,5 +1,7 @@
 import { Hono } from 'hono'
 import { sign } from 'hono/jwt'
+import bcrypt from 'bcryptjs'
+import { authRateLimit, passwordResetRateLimit } from '../middleware/rateLimit'
 
 interface Env {
   DB: D1Database
@@ -8,18 +10,31 @@ interface Env {
 
 export const authRoutes = new Hono<{ Bindings: Env }>()
 
-// Jednoduchá hash funkce pro hesla (pro produkci použít bcrypt přes worker)
+// Rate limiting pro auth endpointy
+authRoutes.use('/login', authRateLimit)
+authRoutes.use('/register', authRateLimit)
+authRoutes.use('/forgot-password', passwordResetRateLimit)
+authRoutes.use('/reset-password', passwordResetRateLimit)
+
+// Bezpečné hashování hesel pomocí bcrypt
+const BCRYPT_ROUNDS = 12
+
 async function hashPassword(password: string): Promise<string> {
-  const encoder = new TextEncoder()
-  const data = encoder.encode(password + 'progressor-salt')
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+  return bcrypt.hash(password, BCRYPT_ROUNDS)
 }
 
 async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  const inputHash = await hashPassword(password)
-  return inputHash === hash
+  // Podpora pro staré SHA-256 hashe (migrace)
+  if (hash.length === 64 && /^[a-f0-9]+$/.test(hash)) {
+    const encoder = new TextEncoder()
+    const data = encoder.encode(password + 'progressor-salt')
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    const oldHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+    return oldHash === hash
+  }
+  // Nové bcrypt hashe
+  return bcrypt.compare(password, hash)
 }
 
 function generateId(): string {

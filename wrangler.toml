@@ -8,6 +8,7 @@ binding = "DB"
 database_name = "progressor-db"
 database_id = "928f2577-8c9a-480f-898e-d4aca3e7459e"
 
-# Pro lokální vývoj
+# Pro lokální vývoj - JWT_SECRET je v .dev.vars
+# Pro produkci spusť: wrangler secret put JWT_SECRET
 [vars]
-JWT_SECRET = "local-dev-secret-change-in-production"
+# JWT_SECRET je uložen jako encrypted secret
