@@ -1,5 +1,4 @@
 import { Hono } from 'hono'
-import { cors } from 'hono/cors'
 import { jwt } from 'hono/jwt'
 import { authRoutes } from './routes/auth'
 import { entriesRoutes } from './routes/entries'
@@ -15,19 +14,16 @@ export interface Env {
 
 const app = new Hono<{ Bindings: Env }>()
 
-// CORS - povolit všechny origins pro vývoj a produkci
-app.use('/*', cors({
-  origin: (origin) => {
-    // Povolit localhost pro vývoj
-    if (origin?.includes('localhost')) return origin
-    // Povolit Cloudflare Pages
-    if (origin?.includes('.pages.dev')) return origin
-    // Povolit vlastní domény
-    if (origin?.includes('progressor')) return origin
-    return 'https://progressor.pages.dev'
-  },
-  credentials: true,
-}))
+// CORS - ruční implementace
+app.use('/*', async (c, next) => {
+  c.header('Access-Control-Allow-Origin', '*')
+  c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+  c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  if (c.req.method === 'OPTIONS') {
+    return c.text('', 204)
+  }
+  await next()
+})
 
 // Veřejné routy
 app.route('/api/auth', authRoutes)
