@@ -5,6 +5,7 @@ import EntryList from '../components/EntryList'
 import TagCloud from '../components/TagCloud'
 import ClientList from '../components/ClientList'
 import SearchBox from '../components/SearchBox'
+import ProjectDetail from '../components/ProjectDetail'
 
 interface DashboardProps {
   onLogout: () => void
@@ -16,6 +17,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     type: 'all' | 'tag' | 'client' | 'date' | 'search'
     value?: string
   }>({ type: 'all' })
+  const [selectedProjectTag, setSelectedProjectTag] = useState<string | null>(null)
 
   const handleLogout = () => {
     localStorage.removeItem('token')
@@ -32,6 +34,11 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
   const handleTagClick = (tag: string) => {
     setFilter({ type: 'tag', value: tag })
+    setSelectedProjectTag(tag)
+  }
+
+  const handleCloseProjectDetail = () => {
+    setSelectedProjectTag(null)
   }
 
   const handleClientClick = (client: string) => {
@@ -99,6 +106,14 @@ export default function Dashboard({ onLogout }: DashboardProps) {
             selectedClient={filter.type === 'client' ? filter.value : undefined}
           />
         </section>
+
+        {/* Project detail */}
+        {selectedProjectTag && (
+          <ProjectDetail
+            tagName={selectedProjectTag}
+            onClose={handleCloseProjectDetail}
+          />
+        )}
 
         {/* Active filter */}
         {filter.type !== 'all' && (

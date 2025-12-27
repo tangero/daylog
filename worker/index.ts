@@ -5,6 +5,7 @@ import { entriesRoutes } from './routes/entries'
 import { tagsRoutes } from './routes/tags'
 import { clientsRoutes } from './routes/clients'
 import { statsRoutes } from './routes/stats'
+import { projectsRoutes } from './routes/projects'
 
 export interface Env {
   DB: D1Database
@@ -46,6 +47,7 @@ app.route('/api/entries', entriesRoutes)
 app.route('/api/tags', tagsRoutes)
 app.route('/api/clients', clientsRoutes)
 app.route('/api/stats', statsRoutes)
+app.route('/api/projects', projectsRoutes)
 
 // 404
 app.notFound((c) => c.json({ error: 'Not found' }, 404))

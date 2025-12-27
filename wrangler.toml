@@ -7,6 +7,7 @@ compatibility_date = "2024-12-18"
 binding = "DB"
 database_name = "progressor-db"
 database_id = "928f2577-8c9a-480f-898e-d4aca3e7459e"
+migrations_dir = "worker/db/migrations"
 
 # Pro lokální vývoj - secrets jsou v .dev.vars
 # Pro produkci spusť:
