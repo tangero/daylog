@@ -39,6 +39,12 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
 
+  // Kontrola, zda je přítomen Authorization header
+  const authHeader = c.req.header('Authorization')
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+
   const jwtMiddleware = jwt({ secret: c.env.JWT_SECRET })
   return jwtMiddleware(c, next)
 })
@@ -55,6 +61,13 @@ app.notFound((c) => c.json({ error: 'Not found' }, 404))
 // Error handler
 app.onError((err, c) => {
   console.error(err)
+
+  // JWT chyby - neplatný nebo chybějící token
+  if (err.message?.includes('jwt') || err.message?.includes('JWT') ||
+      err.message?.includes('token') || err.message?.includes('Unauthorized')) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+
   return c.json({ error: 'Internal server error' }, 500)
 })
 
