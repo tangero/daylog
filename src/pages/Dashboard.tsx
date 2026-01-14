@@ -1,23 +1,30 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import EntryInput from '../components/EntryInput'
 import EntryList from '../components/EntryList'
-import TagCloud from '../components/TagCloud'
-import ClientList from '../components/ClientList'
+import WeekStats from '../components/WeekStats'
 import SearchBox from '../components/SearchBox'
-import ProjectDetail from '../components/ProjectDetail'
 
 interface DashboardProps {
   onLogout: () => void
 }
 
 export default function Dashboard({ onLogout }: DashboardProps) {
+  const [searchParams] = useSearchParams()
   const [refreshKey, setRefreshKey] = useState(0)
+  const [weekOffset, setWeekOffset] = useState(0)
   const [filter, setFilter] = useState<{
     type: 'all' | 'tag' | 'client' | 'date' | 'search'
     value?: string
   }>({ type: 'all' })
-  const [selectedProjectTag, setSelectedProjectTag] = useState<string | null>(null)
+
+  // Zkontroluj URL parametry pro filtrování klienta
+  useEffect(() => {
+    const clientParam = searchParams.get('client')
+    if (clientParam) {
+      setFilter({ type: 'client', value: clientParam })
+    }
+  }, [searchParams])
 
   const handleLogout = () => {
     localStorage.removeItem('token')
@@ -32,17 +39,13 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     setRefreshKey((k) => k + 1)
   }
 
-  const handleTagClick = (tag: string) => {
-    setFilter({ type: 'tag', value: tag })
-    setSelectedProjectTag(tag)
-  }
-
-  const handleCloseProjectDetail = () => {
-    setSelectedProjectTag(null)
-  }
-
-  const handleClientClick = (client: string) => {
-    setFilter({ type: 'client', value: client })
+  const handleDayClick = (date: string) => {
+    if (filter.type === 'date' && filter.value === date) {
+      // Klik na už vybraný den - zruš filtr
+      setFilter({ type: 'all' })
+    } else {
+      setFilter({ type: 'date', value: date })
+    }
   }
 
   const handleSearch = (query: string) => {
@@ -61,59 +64,73 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <h1 className="text-2xl font-bold text-primary-600">Progressor</h1>
-            <nav className="flex gap-4">
-              <span className="text-primary-600 font-medium text-sm">
-                Záznamy
-              </span>
-              <Link
-                to="/stats"
-                className="text-gray-600 hover:text-gray-900 text-sm"
+        <div className="max-w-4xl mx-auto px-4 py-4">
+          {/* Horní řádek - logo, navigace, vyhledávání, odhlášení */}
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-6">
+              <h1 className="text-2xl font-bold text-primary-600">Progressor</h1>
+              <nav className="hidden sm:flex gap-4">
+                <span className="text-primary-600 font-medium text-sm">
+                  Záznamy
+                </span>
+                <Link
+                  to="/hashtags"
+                  className="text-gray-600 hover:text-gray-900 text-sm"
+                >
+                  Hashtagy
+                </Link>
+                <Link
+                  to="/clients"
+                  className="text-gray-600 hover:text-gray-900 text-sm"
+                >
+                  Klienti
+                </Link>
+                <Link
+                  to="/stats"
+                  className="text-gray-600 hover:text-gray-900 text-sm"
+                >
+                  Statistiky
+                </Link>
+              </nav>
+            </div>
+            <div className="flex items-center gap-4">
+              <SearchBox onSearch={handleSearch} compact />
+              <button
+                onClick={handleLogout}
+                className="text-gray-600 hover:text-gray-900 text-sm whitespace-nowrap"
               >
-                Statistiky
-              </Link>
-            </nav>
+                Odhlásit
+              </button>
+            </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="text-gray-600 hover:text-gray-900 text-sm"
-          >
-            Odhlásit se
-          </button>
+
+          {/* Mobilní navigace */}
+          <nav className="flex sm:hidden gap-4 mt-3 text-sm">
+            <span className="text-primary-600 font-medium">Záznamy</span>
+            <Link to="/hashtags" className="text-gray-600">Hashtagy</Link>
+            <Link to="/clients" className="text-gray-600">Klienti</Link>
+            <Link to="/stats" className="text-gray-600">Statistiky</Link>
+          </nav>
         </div>
       </header>
 
       {/* Main content */}
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        {/* Entry input + Search */}
-        <section className="mb-8 space-y-4">
+      <main className="max-w-4xl mx-auto px-4 py-6">
+        {/* Entry input */}
+        <section className="mb-6">
           <EntryInput onEntryAdded={handleEntryAdded} />
-          <SearchBox onSearch={handleSearch} />
         </section>
 
-        {/* Tags and Clients */}
-        <section className="grid md:grid-cols-2 gap-6 mb-8">
-          <TagCloud
+        {/* Week stats - statistika dnů týdne */}
+        <section className="mb-4 bg-white rounded-xl shadow-sm p-3">
+          <WeekStats
             refreshKey={refreshKey}
-            onTagClick={handleTagClick}
-            selectedTag={filter.type === 'tag' ? filter.value : undefined}
-          />
-          <ClientList
-            refreshKey={refreshKey}
-            onClientClick={handleClientClick}
-            selectedClient={filter.type === 'client' ? filter.value : undefined}
+            weekOffset={weekOffset}
+            onWeekChange={setWeekOffset}
+            onDayClick={handleDayClick}
+            selectedDate={filter.type === 'date' ? filter.value : undefined}
           />
         </section>
-
-        {/* Project detail */}
-        {selectedProjectTag && (
-          <ProjectDetail
-            tagName={selectedProjectTag}
-            onClose={handleCloseProjectDetail}
-          />
-        )}
 
         {/* Active filter */}
         {filter.type !== 'all' && (
@@ -122,10 +139,12 @@ export default function Dashboard({ onLogout }: DashboardProps) {
             <span className={`pill ${
               filter.type === 'tag' ? 'pill-tag' :
               filter.type === 'client' ? 'pill-client' :
+              filter.type === 'date' ? 'pill-date' :
               'pill-description'
             }`}>
               {filter.type === 'tag' && '#'}
               {filter.type === 'client' && '@'}
+              {filter.type === 'date' && '📅 '}
               {filter.type === 'search' && '🔍 '}
               {filter.value}
             </span>
@@ -143,6 +162,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           <EntryList
             refreshKey={refreshKey}
             filter={filter}
+            weekOffset={filter.type === 'all' ? weekOffset : undefined}
             onEntryUpdated={handleEntryUpdated}
           />
         </section>
@@ -152,7 +172,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
       <footer className="border-t border-gray-200 mt-8">
         <div className="max-w-4xl mx-auto px-4 py-4 text-center">
           <Link to="/changelog" className="text-sm text-gray-500 hover:text-gray-700">
-            v0.3.0
+            v0.4.1
           </Link>
         </div>
       </footer>

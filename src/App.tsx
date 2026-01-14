@@ -6,6 +6,8 @@ import Register from './pages/Register'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import Dashboard from './pages/Dashboard'
+import Hashtags from './pages/Hashtags'
+import Clients from './pages/Clients'
 import Stats from './pages/Stats'
 import Changelog from './pages/Changelog'
 
@@ -74,6 +76,26 @@ function App() {
         element={
           isAuthenticated ? (
             <Dashboard onLogout={() => setIsAuthenticated(false)} />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+      <Route
+        path="/hashtags"
+        element={
+          isAuthenticated ? (
+            <Hashtags onLogout={() => setIsAuthenticated(false)} />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+      <Route
+        path="/clients"
+        element={
+          isAuthenticated ? (
+            <Clients onLogout={() => setIsAuthenticated(false)} />
           ) : (
             <Navigate to="/login" replace />
           )

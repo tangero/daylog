@@ -57,6 +57,18 @@ export default function Stats({ onLogout }: StatsProps) {
               >
                 Záznamy
               </Link>
+              <Link
+                to="/hashtags"
+                className="text-gray-600 hover:text-gray-900 text-sm"
+              >
+                Hashtagy
+              </Link>
+              <Link
+                to="/clients"
+                className="text-gray-600 hover:text-gray-900 text-sm"
+              >
+                Klienti
+              </Link>
               <span className="text-primary-600 font-medium text-sm">
                 Statistiky
               </span>
@@ -124,7 +136,7 @@ export default function Stats({ onLogout }: StatsProps) {
       <footer className="border-t border-gray-200 mt-8">
         <div className="max-w-4xl mx-auto px-4 py-4 text-center">
           <Link to="/changelog" className="text-sm text-gray-500 hover:text-gray-700">
-            v0.3.0
+            v0.4.1
           </Link>
         </div>
       </footer>
