@@ -9,7 +9,6 @@ export default function Landing() {
       input: "22.1. 2h Schůzka s klientem #meeting @ACME",
       parsed: [
         { type: 'date', icon: '📅', text: '22. ledna', color: 'blue' },
-        { type: 'time', icon: '⏰', text: 'nyní', color: 'purple' },
         { type: 'duration', icon: '⏱', text: '2 hodiny', color: 'green' },
         { type: 'description', icon: '📝', text: 'Schůzka s klientem', color: 'gray' },
         { type: 'tag', icon: '#', text: 'meeting', color: 'orange' },
@@ -17,10 +16,10 @@ export default function Landing() {
       ]
     },
     {
-      input: "včera 30m Code review #development @TechCorp",
+      input: "13/1/2025 10:00 30m Code review #development @TechCorp",
       parsed: [
-        { type: 'date', icon: '📅', text: 'včera', color: 'blue' },
-        { type: 'time', icon: '⏰', text: 'nyní', color: 'purple' },
+        { type: 'date', icon: '📅', text: '13. ledna 2025', color: 'blue' },
+        { type: 'time', icon: '⏰', text: '10:00', color: 'purple' },
         { type: 'duration', icon: '⏱', text: '30 minut', color: 'green' },
         { type: 'description', icon: '📝', text: 'Code review', color: 'gray' },
         { type: 'tag', icon: '#', text: 'development', color: 'orange' },
@@ -28,11 +27,11 @@ export default function Landing() {
       ]
     },
     {
-      input: "pondělí 14:30 1.5h Workshop pro tým #training",
+      input: "10 ledna 14:30 1,5h Workshop pro tým #training",
       parsed: [
-        { type: 'date', icon: '📅', text: 'pondělí', color: 'blue' },
+        { type: 'date', icon: '📅', text: '10. ledna', color: 'blue' },
         { type: 'time', icon: '⏰', text: '14:30', color: 'purple' },
-        { type: 'duration', icon: '⏱', text: '1.5 hodiny', color: 'green' },
+        { type: 'duration', icon: '⏱', text: '1,5 hodiny', color: 'green' },
         { type: 'description', icon: '📝', text: 'Workshop pro tým', color: 'gray' },
         { type: 'tag', icon: '#', text: 'training', color: 'orange' }
       ]
@@ -192,7 +191,7 @@ export default function Landing() {
             <div className="text-center">
               <div className="text-2xl mb-2">📅</div>
               <div className="text-sm font-semibold text-gray-700 mb-1">Datum</div>
-              <div className="text-xs text-gray-500">včera, 22.1., pondělí</div>
+              <div className="text-xs text-gray-500">22.1., 13/1/2025, 10 ledna</div>
             </div>
             <div className="text-center">
               <div className="text-2xl mb-2">⏱</div>
@@ -259,8 +258,8 @@ export default function Landing() {
               Chytré parsování
             </h4>
             <p className="text-gray-600 leading-relaxed">
-              Automaticky rozpozná datum (včera, 22.1., pondělí), čas, délku práce
-              (30m, 2h, 1.5h), hashtagy a klienty. Přizpůsobí se tvému stylu psaní.
+              Automaticky rozpozná datum (22.1., 13/1/2025, 10 ledna), čas, délku práce
+              (30m, 2h, 1,5h), hashtagy a klienty. Flexibilní formát zápisu.
             </p>
           </div>
 
@@ -391,7 +390,11 @@ export default function Landing() {
                 Changelog (v0.4.1)
               </Link>
               <span className="text-gray-400">•</span>
-              <span>&copy; 2025-2026 Progressor</span>
+              <span>&copy; 2025-2026 Patrick Zandl</span>
+              <span className="text-gray-400">•</span>
+              <a href="mailto:patrick@zandl.cz" className="hover:text-primary-600 transition-colors">
+                patrick@zandl.cz
+              </a>
             </div>
           </div>
         </div>

@@ -204,7 +204,7 @@ export default function Changelog() {
       <footer className="border-t border-gray-200 mt-16">
         <div className="max-w-4xl mx-auto px-4 py-8 text-center text-gray-600">
           <p className="text-sm">
-            &copy; 2025-2026 Progressor. Jednoduchý nástroj pro zaznamenávání práce.
+            &copy; 2025-2026 Patrick Zandl | <a href="mailto:patrick@zandl.cz" className="text-primary-600 hover:text-primary-700">patrick@zandl.cz</a>
           </p>
         </div>
       </footer>
