@@ -24,6 +24,7 @@ const changelog: ChangelogEntry[] = [
           'Samostatná stránka Klienti s přehledem fakturovatelných hodin',
           'Kompaktní vyhledávání přesunuté do hlavičky',
           'Nová favicon s logem Progressor',
+          'Moderní landing page s interaktivním demo formátu zápisu',
         ],
       },
       {
