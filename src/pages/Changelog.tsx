@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 
-const CURRENT_VERSION = '0.3.0'
+const CURRENT_VERSION = '0.4.1'
 
 interface ChangelogEntry {
   version: string
@@ -12,6 +12,38 @@ interface ChangelogEntry {
 }
 
 const changelog: ChangelogEntry[] = [
+  {
+    version: '0.4.1',
+    date: '2025-01-14',
+    sections: [
+      {
+        type: 'added',
+        items: [
+          'Týdenní statistika hodin po dnech (Po 8h | Út 3h...) s možností listování mezi týdny',
+          'Samostatná stránka Hashtagy s přehledem projektů',
+          'Samostatná stránka Klienti s přehledem fakturovatelných hodin',
+          'Kompaktní vyhledávání přesunuté do hlavičky',
+          'Nová favicon s logem Progressor',
+        ],
+      },
+      {
+        type: 'changed',
+        items: [
+          'Záznamy seskupeny po dnech s barevným podbarvením',
+          'Hlavička dne zobrazuje @Klienti (fakturovatelné) + celkem',
+          'Záznamy na jednom řádku: čas + délka + popis',
+          'Editace záznamu kliknutím (bez ikony tužky)',
+          'Tlačítko [-] pro smazání místo ikony koše',
+        ],
+      },
+      {
+        type: 'fixed',
+        items: [
+          'Parser akceptuje datum s tečkou na konci (13.1. i 13.1)',
+        ],
+      },
+    ],
+  },
   {
     version: '0.3.0',
     date: '2024-12-22',
@@ -171,7 +203,7 @@ export default function Changelog() {
       <footer className="border-t border-gray-200 mt-16">
         <div className="max-w-4xl mx-auto px-4 py-8 text-center text-gray-600">
           <p className="text-sm">
-            &copy; 2025 Progressor. Jednoduchý nástroj pro zaznamenávání práce.
+            &copy; 2025-2026 Progressor. Jednoduchý nástroj pro zaznamenávání práce.
           </p>
         </div>
       </footer>
