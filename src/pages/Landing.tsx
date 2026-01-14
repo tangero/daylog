@@ -6,9 +6,9 @@ export default function Landing() {
 
   const demoExamples = [
     {
-      input: "22.1. 2h Schůzka s klientem #meeting @ACME",
+      input: "včera 2h Schůzka s klientem #meeting @ACME",
       parsed: [
-        { type: 'date', icon: '📅', text: '22. ledna', color: 'blue' },
+        { type: 'date', icon: '📅', text: 'včera', color: 'blue' },
         { type: 'duration', icon: '⏱', text: '2 hodiny', color: 'green' },
         { type: 'description', icon: '📝', text: 'Schůzka s klientem', color: 'gray' },
         { type: 'tag', icon: '#', text: 'meeting', color: 'orange' },
@@ -16,9 +16,9 @@ export default function Landing() {
       ]
     },
     {
-      input: "13/1/2025 10:00 30m Code review #development @TechCorp",
+      input: "pondělí 10:00 30m Code review #development @TechCorp",
       parsed: [
-        { type: 'date', icon: '📅', text: '13. ledna 2025', color: 'blue' },
+        { type: 'date', icon: '📅', text: 'pondělí', color: 'blue' },
         { type: 'time', icon: '⏰', text: '10:00', color: 'purple' },
         { type: 'duration', icon: '⏱', text: '30 minut', color: 'green' },
         { type: 'description', icon: '📝', text: 'Code review', color: 'gray' },
@@ -27,9 +27,9 @@ export default function Landing() {
       ]
     },
     {
-      input: "10 ledna 14:30 1,5h Workshop pro tým #training",
+      input: "22.1. 14:30 1,5h Workshop pro tým #training",
       parsed: [
-        { type: 'date', icon: '📅', text: '10. ledna', color: 'blue' },
+        { type: 'date', icon: '📅', text: '22. ledna', color: 'blue' },
         { type: 'time', icon: '⏰', text: '14:30', color: 'purple' },
         { type: 'duration', icon: '⏱', text: '1,5 hodiny', color: 'green' },
         { type: 'description', icon: '📝', text: 'Workshop pro tým', color: 'gray' },
@@ -191,7 +191,7 @@ export default function Landing() {
             <div className="text-center">
               <div className="text-2xl mb-2">📅</div>
               <div className="text-sm font-semibold text-gray-700 mb-1">Datum</div>
-              <div className="text-xs text-gray-500">22.1., 13/1/2025, 10 ledna</div>
+              <div className="text-xs text-gray-500">včera, pondělí, 22.1.</div>
             </div>
             <div className="text-center">
               <div className="text-2xl mb-2">⏱</div>
@@ -258,7 +258,7 @@ export default function Landing() {
               Chytré parsování
             </h4>
             <p className="text-gray-600 leading-relaxed">
-              Automaticky rozpozná datum (22.1., 13/1/2025, 10 ledna), čas, délku práce
+              Automaticky rozpozná datum (včera, pondělí, 22.1.), čas, délku práce
               (30m, 2h, 1,5h), hashtagy a klienty. Flexibilní formát zápisu.
             </p>
           </div>

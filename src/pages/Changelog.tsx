@@ -41,6 +41,8 @@ const changelog: ChangelogEntry[] = [
         type: 'fixed',
         items: [
           'Parser akceptuje datum s tečkou na konci (13.1. i 13.1)',
+          'Parser podporuje relativní data (dnes, včera, zítra, předevčírem, pozítří)',
+          'Parser podporuje české i anglické dny v týdnu (pondělí, monday, po, mon...)',
         ],
       },
     ],

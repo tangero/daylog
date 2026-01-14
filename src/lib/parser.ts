@@ -51,6 +51,47 @@ const MONTHS: Record<string, number> = {
   'pros': 12, 'prosinec': 12, 'prosince': 12, 'dec': 12,
 }
 
+// Relativní data (offset od dneška)
+const RELATIVE_DATES: Record<string, number> = {
+  'dnes': 0, 'today': 0,
+  'včera': -1, 'yesterday': -1,
+  'předevčírem': -2,
+  'zítra': 1, 'tomorrow': 1,
+  'pozítří': 2,
+}
+
+// Dny v týdnu (0 = neděle, 1 = pondělí, ...)
+const WEEKDAYS: Record<string, number> = {
+  // České
+  'neděle': 0, 'nedele': 0, 'ne': 0,
+  'pondělí': 1, 'pondeli': 1, 'po': 1,
+  'úterý': 2, 'utery': 2, 'út': 2, 'ut': 2,
+  'středa': 3, 'streda': 3, 'st': 3,
+  'čtvrtek': 4, 'ctvrtek': 4, 'čt': 4, 'ct': 4,
+  'pátek': 5, 'patek': 5, 'pá': 5, 'pa': 5,
+  'sobota': 6, 'so': 6,
+  // Anglické
+  'sunday': 0, 'sun': 0,
+  'monday': 1, 'mon': 1,
+  'tuesday': 2, 'tue': 2,
+  'wednesday': 3, 'wed': 3,
+  'thursday': 4, 'thu': 4,
+  'friday': 5, 'fri': 5,
+  'saturday': 6, 'sat': 6,
+}
+
+// Vypočítej datum pro den v týdnu (nejbližší minulý nebo dnešní)
+function getDateForWeekday(targetDay: number): Date {
+  const today = new Date()
+  const currentDay = today.getDay()
+  let diff = currentDay - targetDay
+  if (diff < 0) diff += 7 // Pokud je cílový den "v budoucnu", jdi týden zpět
+  if (diff === 0) diff = 0 // Dnešní den = dnes
+  const result = new Date(today)
+  result.setDate(today.getDate() - diff)
+  return result
+}
+
 function parseYear(yearStr: string | undefined): number {
   if (!yearStr) return new Date().getFullYear()
   const year = parseInt(yearStr, 10)
@@ -59,7 +100,30 @@ function parseYear(yearStr: string | undefined): number {
 }
 
 function extractDate(text: string): { date: Date | null; rest: string } {
-  // Zkusit formát dd.mm.yyyy nebo dd/mm/yyyy
+  // 1. Zkusit relativní data (dnes, včera, zítra, ...)
+  const relativeMatch = text.match(/^(dnes|today|včera|yesterday|předevčírem|zítra|tomorrow|pozítří)(?:\s|$)/i)
+  if (relativeMatch) {
+    const keyword = relativeMatch[1].toLowerCase()
+    const offset = RELATIVE_DATES[keyword]
+    if (offset !== undefined) {
+      const date = new Date()
+      date.setDate(date.getDate() + offset)
+      return { date, rest: text.slice(relativeMatch[0].length).trim() }
+    }
+  }
+
+  // 2. Zkusit dny v týdnu (pondělí, monday, ...)
+  const weekdayMatch = text.match(/^(pondělí|pondeli|úterý|utery|středa|streda|čtvrtek|ctvrtek|pátek|patek|sobota|neděle|nedele|po|út|ut|st|čt|ct|pá|pa|so|ne|monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|wed|thu|fri|sat|sun)(?:\s|$)/i)
+  if (weekdayMatch) {
+    const keyword = weekdayMatch[1].toLowerCase()
+    const targetDay = WEEKDAYS[keyword]
+    if (targetDay !== undefined) {
+      const date = getDateForWeekday(targetDay)
+      return { date, rest: text.slice(weekdayMatch[0].length).trim() }
+    }
+  }
+
+  // 3. Zkusit formát dd.mm.yyyy nebo dd/mm/yyyy
   const numMatch = text.match(PATTERNS.date)
   if (numMatch) {
     const day = parseInt(numMatch[1], 10)
@@ -69,7 +133,7 @@ function extractDate(text: string): { date: Date | null; rest: string } {
     return { date, rest: text.slice(numMatch[0].length).trim() }
   }
 
-  // Zkusit textový formát (22 Jan 2025)
+  // 4. Zkusit textový formát (22 Jan 2025)
   const textMatch = text.match(PATTERNS.dateText)
   if (textMatch) {
     const day = parseInt(textMatch[1], 10)
