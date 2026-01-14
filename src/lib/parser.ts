@@ -21,8 +21,8 @@ export interface ParseResult {
 
 // Regex patterns
 const PATTERNS = {
-  // Datum: 22.1.2025, 22/1/2025, 22.1., 22 Jan 2025
-  date: /^(\d{1,2})[.\/](\d{1,2})(?:[.\/](\d{2,4}))?/i,
+  // Datum: 22.1.2025, 22/1/2025, 22.1., 22.1, 22 Jan 2025
+  date: /^(\d{1,2})[.\/](\d{1,2})(?:[.\/](\d{2,4}))?\.?/i,
   dateText: /^(\d{1,2})\s+(led(?:en|na)?|úno(?:r|ra)?|bře(?:zen|zna)?|dub(?:en|na)?|kvě(?:ten|tna)?|čer(?:ven|vna)?|červen(?:ec|ce)?|srp(?:en|na)?|zář(?:í)?|říj(?:en|na)?|list(?:opad|opadu)?|pros(?:inec|ince)?|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s*(\d{2,4})?/i,
   // Čas: 8:00, 14:30
   time: /^(\d{1,2}):(\d{2})(?!\d)/,
