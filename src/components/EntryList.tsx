@@ -112,6 +112,19 @@ function highlightText(text: string): JSX.Element {
   )
 }
 
+// Extrahuje text pro zobrazení (bez data, času a délky na začátku)
+function getDisplayText(entry: Entry): string {
+  // Použij description + hashtagy + klienty
+  let text = entry.description || ''
+  if (entry.hashtags.length > 0) {
+    text += ' ' + entry.hashtags.map(t => `#${t}`).join(' ')
+  }
+  if (entry.clients.length > 0) {
+    text += ' ' + entry.clients.map(c => `@${c}`).join(' ')
+  }
+  return text.trim()
+}
+
 function getWeekRange(weekOffset: number): { start: Date; end: Date } {
   const now = new Date()
   const currentDay = now.getDay()
@@ -333,81 +346,60 @@ export default function EntryList({ refreshKey, filter, weekOffset, onEntryUpdat
           {/* Záznamy dne */}
           <div className="divide-y divide-gray-200/50">
             {group.entries.map((entry) => (
-              <div key={entry.id} className="p-4 hover:bg-white/50 transition-colors">
+              <div key={entry.id} className="px-3 py-2 hover:bg-white/50 transition-colors">
                 {editingId === entry.id ? (
                   // Editační režim
-                  <div className="space-y-3">
+                  <div className="flex items-center gap-2">
                     <input
                       type="text"
                       value={editText}
                       onChange={(e) => setEditText(e.target.value)}
-                      className="input"
+                      className="input flex-1"
                       autoFocus
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') saveEdit()
                         if (e.key === 'Escape') cancelEdit()
                       }}
+                      onBlur={() => {
+                        // Malé zpoždění aby se stihlo kliknout na tlačítko smazat
+                        setTimeout(() => {
+                          if (editingId === entry.id) saveEdit()
+                        }, 150)
+                      }}
                     />
-                    <div className="flex gap-2">
-                      <button
-                        onClick={saveEdit}
-                        disabled={updateMutation.isPending}
-                        className="btn btn-primary text-sm"
-                      >
-                        {updateMutation.isPending ? 'Ukládám...' : 'Uložit'}
-                      </button>
-                      <button
-                        onClick={cancelEdit}
-                        className="btn btn-secondary text-sm"
-                      >
-                        Zrušit
-                      </button>
-                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (confirm('Opravdu smazat tento záznam?')) {
+                          deleteMutation.mutate(entry.id)
+                          setEditingId(null)
+                        }
+                      }}
+                      className="px-2 py-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors font-medium"
+                      title="Smazat záznam"
+                    >
+                      −
+                    </button>
                   </div>
                 ) : (
-                  // Zobrazovací režim
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      {/* Čas a délka na začátku */}
-                      <div className="flex items-center gap-2 mb-1">
-                        {entry.parsedTime && (
-                          <span className="text-sm text-gray-500">
-                            {entry.parsedTime}
-                          </span>
-                        )}
-                        {entry.durationMinutes > 0 && (
-                          <span className="text-sm text-green-600 font-medium">
-                            {formatDuration(entry.durationMinutes)}
-                          </span>
-                        )}
-                      </div>
-                      {/* Text záznamu se zvýrazněním */}
-                      <p className="text-gray-900 break-words">
-                        {highlightText(entry.description || entry.rawText)}
-                      </p>
-                    </div>
-
-                    {/* Akce */}
-                    <div className="flex gap-2 shrink-0">
-                      <button
-                        onClick={() => startEdit(entry)}
-                        className="text-gray-400 hover:text-blue-600 transition-colors"
-                        title="Upravit"
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (confirm('Opravdu smazat tento záznam?')) {
-                            deleteMutation.mutate(entry.id)
-                          }
-                        }}
-                        className="text-gray-400 hover:text-red-600 transition-colors"
-                        title="Smazat"
-                      >
-                        🗑️
-                      </button>
-                    </div>
+                  // Zobrazovací režim - jeden řádek, kliknutím editace
+                  <div
+                    onClick={() => startEdit(entry)}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    {entry.parsedTime && (
+                      <span className="text-gray-500 text-sm shrink-0">
+                        {entry.parsedTime}
+                      </span>
+                    )}
+                    {entry.durationMinutes > 0 && (
+                      <span className="text-green-600 font-medium text-sm shrink-0">
+                        {formatDuration(entry.durationMinutes)}
+                      </span>
+                    )}
+                    <span className="text-gray-900 truncate">
+                      {highlightText(getDisplayText(entry))}
+                    </span>
                   </div>
                 )}
               </div>
