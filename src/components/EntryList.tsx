@@ -145,7 +145,7 @@ interface DayGroup {
   dayName: string
   formattedDate: string
   totalMinutes: number
-  clientSummary: string
+  clientTotalMinutes: number
   entries: Entry[]
   colorIndex: number
 }
@@ -183,39 +183,17 @@ function groupEntriesByDay(entries: Entry[], weekOffset: number | undefined): Da
     // Spočítej celkové minuty
     const totalMinutes = dayEntries.reduce((sum, e) => sum + (e.durationMinutes || 0), 0)
 
-    // Vytvoř shrnutí klientů
-    const clientMinutes = new Map<string, number>()
-    let otherMinutes = 0
-
-    dayEntries.forEach((entry) => {
-      if (entry.clients.length > 0) {
-        entry.clients.forEach((client) => {
-          const existing = clientMinutes.get(client) || 0
-          clientMinutes.set(client, existing + (entry.durationMinutes || 0))
-        })
-      } else if (entry.durationMinutes > 0) {
-        otherMinutes += entry.durationMinutes
-      }
-    })
-
-    const clientParts: string[] = []
-    clientMinutes.forEach((minutes, client) => {
-      if (minutes > 0) {
-        clientParts.push(`${formatDuration(minutes)} @${client}`)
-      }
-    })
-    if (otherMinutes > 0) {
-      clientParts.push(`${formatDuration(otherMinutes)} jiné`)
-    }
-
-    const clientSummary = clientParts.join(', ')
+    // Spočítej minuty pro záznamy s klienty (fakturovatelné)
+    const clientTotalMinutes = dayEntries
+      .filter((e) => e.clients.length > 0)
+      .reduce((sum, e) => sum + (e.durationMinutes || 0), 0)
 
     return {
       date: dateStr,
       dayName,
       formattedDate,
       totalMinutes,
-      clientSummary,
+      clientTotalMinutes,
       entries: dayEntries,
       colorIndex: index % DAY_COLORS.length,
     }
@@ -330,16 +308,16 @@ export default function EntryList({ refreshKey, filter, weekOffset, onEntryUpdat
                   {group.dayName} {group.formattedDate}
                 </span>
                 {group.totalMinutes > 0 && (
-                  <span className="text-green-600 font-medium">
-                    - {formatDuration(group.totalMinutes)}
+                  <span className="text-gray-600 font-medium">
+                    {' - '}
+                    {group.clientTotalMinutes > 0 && (
+                      <span className="text-pink-600">@Klienti: {formatDuration(group.clientTotalMinutes)}</span>
+                    )}
+                    {group.clientTotalMinutes > 0 && ', '}
+                    <span className="text-green-600">celkem {formatDuration(group.totalMinutes)}</span>
                   </span>
                 )}
               </div>
-              {group.clientSummary && (
-                <span className="text-sm text-gray-600 truncate max-w-md">
-                  {group.clientSummary}
-                </span>
-              )}
             </div>
           </div>
 
