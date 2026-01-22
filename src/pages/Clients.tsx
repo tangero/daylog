@@ -4,6 +4,7 @@ import { API_BASE } from '../lib/config'
 
 interface ClientsProps {
   onLogout: () => void
+  userEmail: string | null
 }
 
 interface Client {
@@ -30,7 +31,7 @@ function formatTotalTime(minutes: number): string {
   return `${hours}h ${mins}m`
 }
 
-export default function Clients({ onLogout }: ClientsProps) {
+export default function Clients({ onLogout, userEmail }: ClientsProps) {
   const navigate = useNavigate()
 
   const handleLogout = () => {
@@ -79,12 +80,19 @@ export default function Clients({ onLogout }: ClientsProps) {
               </Link>
             </nav>
           </div>
-          <button
-            onClick={handleLogout}
-            className="text-gray-600 hover:text-gray-900 text-sm"
-          >
-            Odhlásit se
-          </button>
+          <div className="flex items-center gap-4">
+            {userEmail && (
+              <span className="text-gray-500 text-sm hidden md:inline">
+                {userEmail}
+              </span>
+            )}
+            <button
+              onClick={handleLogout}
+              className="text-gray-600 hover:text-gray-900 text-sm"
+            >
+              Odhlásit se
+            </button>
+          </div>
         </div>
       </header>
 

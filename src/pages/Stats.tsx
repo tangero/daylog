@@ -6,11 +6,12 @@ import ClientBilling from '../components/stats/ClientBilling'
 
 interface StatsProps {
   onLogout: () => void
+  userEmail: string | null
 }
 
 type Tab = 'summary' | 'billing'
 
-export default function Stats({ onLogout }: StatsProps) {
+export default function Stats({ onLogout, userEmail }: StatsProps) {
   const [activeTab, setActiveTab] = useState<Tab>('summary')
   const [period, setPeriod] = useState<{
     type: 'day' | 'week' | 'month' | 'custom'
@@ -74,12 +75,19 @@ export default function Stats({ onLogout }: StatsProps) {
               </span>
             </nav>
           </div>
-          <button
-            onClick={handleLogout}
-            className="text-gray-600 hover:text-gray-900 text-sm"
-          >
-            Odhlásit se
-          </button>
+          <div className="flex items-center gap-4">
+            {userEmail && (
+              <span className="text-gray-500 text-sm hidden md:inline">
+                {userEmail}
+              </span>
+            )}
+            <button
+              onClick={handleLogout}
+              className="text-gray-600 hover:text-gray-900 text-sm"
+            >
+              Odhlásit se
+            </button>
+          </div>
         </div>
       </header>
 

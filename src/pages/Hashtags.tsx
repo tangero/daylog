@@ -6,6 +6,7 @@ import ProjectDetail from '../components/ProjectDetail'
 
 interface HashtagsProps {
   onLogout: () => void
+  userEmail: string | null
 }
 
 interface Tag {
@@ -22,7 +23,7 @@ async function fetchTags(): Promise<Tag[]> {
   return res.json()
 }
 
-export default function Hashtags({ onLogout }: HashtagsProps) {
+export default function Hashtags({ onLogout, userEmail }: HashtagsProps) {
   const [selectedTag, setSelectedTag] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
 
@@ -76,12 +77,19 @@ export default function Hashtags({ onLogout }: HashtagsProps) {
               </Link>
             </nav>
           </div>
-          <button
-            onClick={handleLogout}
-            className="text-gray-600 hover:text-gray-900 text-sm"
-          >
-            Odhlásit se
-          </button>
+          <div className="flex items-center gap-4">
+            {userEmail && (
+              <span className="text-gray-500 text-sm hidden md:inline">
+                {userEmail}
+              </span>
+            )}
+            <button
+              onClick={handleLogout}
+              className="text-gray-600 hover:text-gray-900 text-sm"
+            >
+              Odhlásit se
+            </button>
+          </div>
         </div>
       </header>
 

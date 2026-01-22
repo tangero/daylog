@@ -7,9 +7,10 @@ import SearchBox from '../components/SearchBox'
 
 interface DashboardProps {
   onLogout: () => void
+  userEmail: string | null
 }
 
-export default function Dashboard({ onLogout }: DashboardProps) {
+export default function Dashboard({ onLogout, userEmail }: DashboardProps) {
   const [searchParams] = useSearchParams()
   const [refreshKey, setRefreshKey] = useState(0)
   const [weekOffset, setWeekOffset] = useState(0)
@@ -95,11 +96,16 @@ export default function Dashboard({ onLogout }: DashboardProps) {
             </div>
             <div className="flex items-center gap-4">
               <SearchBox onSearch={handleSearch} compact />
+              {userEmail && (
+                <span className="text-gray-500 text-sm hidden md:inline">
+                  {userEmail}
+                </span>
+              )}
               <button
                 onClick={handleLogout}
                 className="text-gray-600 hover:text-gray-900 text-sm whitespace-nowrap"
               >
-                Odhlásit
+                Odhlásit se
               </button>
             </div>
           </div>

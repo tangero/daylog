@@ -3,6 +3,62 @@ const API_URL = import.meta.env.PROD
   ? 'https://progressor-api.zandl.workers.dev'
   : ''  // V dev módu používáme proxy přes Vite
 
+// Callback pro odhlášení při expirovaném tokenu
+let onAuthError: (() => void) | null = null
+
+export function setAuthErrorHandler(handler: () => void) {
+  onAuthError = handler
+}
+
+// Dekódování JWT tokenu (bez ověření podpisu - to dělá server)
+interface TokenPayload {
+  sub: string
+  email: string
+  exp: number
+}
+
+export function decodeToken(token: string): TokenPayload | null {
+  try {
+    const parts = token.split('.')
+    if (parts.length !== 3) return null
+    const payload = JSON.parse(atob(parts[1]))
+    return payload as TokenPayload
+  } catch {
+    return null
+  }
+}
+
+// Kontrola, zda je token platný (nevypršel)
+export function isTokenValid(): boolean {
+  const token = localStorage.getItem('token')
+  if (!token) return false
+
+  const payload = decodeToken(token)
+  if (!payload) return false
+
+  // Token je platný pokud exp je v budoucnosti
+  return payload.exp * 1000 > Date.now()
+}
+
+// Získání informací o uživateli z tokenu
+export function getUserFromToken(): { id: string; email: string } | null {
+  const token = localStorage.getItem('token')
+  if (!token) return null
+
+  const payload = decodeToken(token)
+  if (!payload) return null
+
+  return { id: payload.sub, email: payload.email }
+}
+
+// Odhlášení - smazat token
+export function logout() {
+  localStorage.removeItem('token')
+  if (onAuthError) {
+    onAuthError()
+  }
+}
+
 export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -22,6 +78,12 @@ export async function apiRequest<T>(
     ...options,
     headers,
   })
+
+  // Při 401 chybě automaticky odhlásit uživatele
+  if (response.status === 401) {
+    logout()
+    throw new Error('Vaše přihlášení vypršelo. Prosím přihlaste se znovu.')
+  }
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'Request failed' }))

@@ -10,14 +10,33 @@ import Hashtags from './pages/Hashtags'
 import Clients from './pages/Clients'
 import Stats from './pages/Stats'
 import Changelog from './pages/Changelog'
+import { isTokenValid, setAuthErrorHandler, getUserFromToken } from './lib/api'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
 
   useEffect(() => {
-    // Kontrola tokenu v localStorage
-    const token = localStorage.getItem('token')
-    setIsAuthenticated(!!token)
+    // Kontrola tokenu v localStorage - včetně expirace!
+    const valid = isTokenValid()
+    setIsAuthenticated(valid)
+
+    if (valid) {
+      const user = getUserFromToken()
+      setUserEmail(user?.email || null)
+    } else {
+      setUserEmail(null)
+      // Pokud token existuje ale není platný, smazat ho
+      if (localStorage.getItem('token')) {
+        localStorage.removeItem('token')
+      }
+    }
+
+    // Nastavit handler pro automatické odhlášení při 401 chybě z API
+    setAuthErrorHandler(() => {
+      setIsAuthenticated(false)
+      setUserEmail(null)
+    })
   }, [])
 
   // Loading stav
@@ -37,7 +56,11 @@ function App() {
           isAuthenticated ? (
             <Navigate to="/dashboard" replace />
           ) : (
-            <Login onLogin={() => setIsAuthenticated(true)} />
+            <Login onLogin={() => {
+              setIsAuthenticated(true)
+              const user = getUserFromToken()
+              setUserEmail(user?.email || null)
+            }} />
           )
         }
       />
@@ -47,7 +70,11 @@ function App() {
           isAuthenticated ? (
             <Navigate to="/dashboard" replace />
           ) : (
-            <Register onRegister={() => setIsAuthenticated(true)} />
+            <Register onRegister={() => {
+              setIsAuthenticated(true)
+              const user = getUserFromToken()
+              setUserEmail(user?.email || null)
+            }} />
           )
         }
       />
@@ -75,7 +102,10 @@ function App() {
         path="/dashboard"
         element={
           isAuthenticated ? (
-            <Dashboard onLogout={() => setIsAuthenticated(false)} />
+            <Dashboard onLogout={() => {
+              setIsAuthenticated(false)
+              setUserEmail(null)
+            }} userEmail={userEmail} />
           ) : (
             <Navigate to="/login" replace />
           )
@@ -85,7 +115,10 @@ function App() {
         path="/hashtags"
         element={
           isAuthenticated ? (
-            <Hashtags onLogout={() => setIsAuthenticated(false)} />
+            <Hashtags onLogout={() => {
+              setIsAuthenticated(false)
+              setUserEmail(null)
+            }} userEmail={userEmail} />
           ) : (
             <Navigate to="/login" replace />
           )
@@ -95,7 +128,10 @@ function App() {
         path="/clients"
         element={
           isAuthenticated ? (
-            <Clients onLogout={() => setIsAuthenticated(false)} />
+            <Clients onLogout={() => {
+              setIsAuthenticated(false)
+              setUserEmail(null)
+            }} userEmail={userEmail} />
           ) : (
             <Navigate to="/login" replace />
           )
@@ -105,7 +141,10 @@ function App() {
         path="/stats"
         element={
           isAuthenticated ? (
-            <Stats onLogout={() => setIsAuthenticated(false)} />
+            <Stats onLogout={() => {
+              setIsAuthenticated(false)
+              setUserEmail(null)
+            }} userEmail={userEmail} />
           ) : (
             <Navigate to="/login" replace />
           )
