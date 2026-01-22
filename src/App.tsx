@@ -1,16 +1,27 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
-import Landing from './pages/Landing'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import ForgotPassword from './pages/ForgotPassword'
-import ResetPassword from './pages/ResetPassword'
-import Dashboard from './pages/Dashboard'
-import Hashtags from './pages/Hashtags'
-import Clients from './pages/Clients'
-import Stats from './pages/Stats'
-import Changelog from './pages/Changelog'
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react'
 import { isTokenValid, setAuthErrorHandler, getUserFromToken, getToken, removeToken } from './lib/api'
+
+// Lazy loading stránek - rozdělení bundle
+const Landing = lazy(() => import('./pages/Landing'))
+const Login = lazy(() => import('./pages/Login'))
+const Register = lazy(() => import('./pages/Register'))
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
+const ResetPassword = lazy(() => import('./pages/ResetPassword'))
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Hashtags = lazy(() => import('./pages/Hashtags'))
+const Clients = lazy(() => import('./pages/Clients'))
+const Stats = lazy(() => import('./pages/Stats'))
+const Changelog = lazy(() => import('./pages/Changelog'))
+
+// Loading spinner komponenta
+function LoadingSpinner() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+    </div>
+  )
+}
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
@@ -39,129 +50,119 @@ function App() {
     })
   }, [])
 
+  // Memoizované handlery pro zamezení zbytečných re-renderů
+  const handleLogin = useCallback(() => {
+    setIsAuthenticated(true)
+    const user = getUserFromToken()
+    setUserEmail(user?.email || null)
+  }, [])
+
+  const handleLogout = useCallback(() => {
+    setIsAuthenticated(false)
+    setUserEmail(null)
+  }, [])
+
   // Loading stav
   if (isAuthenticated === null) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-      </div>
-    )
+    return <LoadingSpinner />
   }
 
   return (
-    <Routes>
-      <Route
-        path="/login"
-        element={
-          isAuthenticated ? (
-            <Navigate to="/dashboard" replace />
-          ) : (
-            <Login onLogin={() => {
-              setIsAuthenticated(true)
-              const user = getUserFromToken()
-              setUserEmail(user?.email || null)
-            }} />
-          )
-        }
-      />
-      <Route
-        path="/register"
-        element={
-          isAuthenticated ? (
-            <Navigate to="/dashboard" replace />
-          ) : (
-            <Register onRegister={() => {
-              setIsAuthenticated(true)
-              const user = getUserFromToken()
-              setUserEmail(user?.email || null)
-            }} />
-          )
-        }
-      />
-      <Route
-        path="/forgot-password"
-        element={
-          isAuthenticated ? (
-            <Navigate to="/dashboard" replace />
-          ) : (
-            <ForgotPassword />
-          )
-        }
-      />
-      <Route
-        path="/reset-password"
-        element={
-          isAuthenticated ? (
-            <Navigate to="/dashboard" replace />
-          ) : (
-            <ResetPassword />
-          )
-        }
-      />
-      <Route
-        path="/dashboard"
-        element={
-          isAuthenticated ? (
-            <Dashboard onLogout={() => {
-              setIsAuthenticated(false)
-              setUserEmail(null)
-            }} userEmail={userEmail} />
-          ) : (
-            <Navigate to="/login" replace />
-          )
-        }
-      />
-      <Route
-        path="/hashtags"
-        element={
-          isAuthenticated ? (
-            <Hashtags onLogout={() => {
-              setIsAuthenticated(false)
-              setUserEmail(null)
-            }} userEmail={userEmail} />
-          ) : (
-            <Navigate to="/login" replace />
-          )
-        }
-      />
-      <Route
-        path="/clients"
-        element={
-          isAuthenticated ? (
-            <Clients onLogout={() => {
-              setIsAuthenticated(false)
-              setUserEmail(null)
-            }} userEmail={userEmail} />
-          ) : (
-            <Navigate to="/login" replace />
-          )
-        }
-      />
-      <Route
-        path="/stats"
-        element={
-          isAuthenticated ? (
-            <Stats onLogout={() => {
-              setIsAuthenticated(false)
-              setUserEmail(null)
-            }} userEmail={userEmail} />
-          ) : (
-            <Navigate to="/login" replace />
-          )
-        }
-      />
-      <Route path="/changelog" element={<Changelog />} />
-      <Route
-        path="/"
-        element={
-          isAuthenticated ? (
-            <Navigate to="/dashboard" replace />
-          ) : (
-            <Landing />
-          )
-        }
-      />
-    </Routes>
+    <Suspense fallback={<LoadingSpinner />}>
+      <Routes>
+        <Route
+          path="/login"
+          element={
+            isAuthenticated ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <Login onLogin={handleLogin} />
+            )
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            isAuthenticated ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <Register onRegister={handleLogin} />
+            )
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            isAuthenticated ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <ForgotPassword />
+            )
+          }
+        />
+        <Route
+          path="/reset-password"
+          element={
+            isAuthenticated ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <ResetPassword />
+            )
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            isAuthenticated ? (
+              <Dashboard onLogout={handleLogout} userEmail={userEmail} />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route
+          path="/hashtags"
+          element={
+            isAuthenticated ? (
+              <Hashtags onLogout={handleLogout} userEmail={userEmail} />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route
+          path="/clients"
+          element={
+            isAuthenticated ? (
+              <Clients onLogout={handleLogout} userEmail={userEmail} />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route
+          path="/stats"
+          element={
+            isAuthenticated ? (
+              <Stats onLogout={handleLogout} userEmail={userEmail} />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route path="/changelog" element={<Changelog />} />
+        <Route
+          path="/"
+          element={
+            isAuthenticated ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <Landing />
+            )
+          }
+        />
+      </Routes>
+    </Suspense>
   )
 }
 

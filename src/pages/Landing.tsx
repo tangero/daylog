@@ -1,51 +1,52 @@
 import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 
+// Statická data mimo komponentu - nevytváří se při každém renderu
+const DEMO_EXAMPLES = [
+  {
+    input: "včera 2h Schůzka s klientem #meeting @ACME",
+    parsed: [
+      { type: 'date', icon: '📅', text: 'včera', color: 'blue' },
+      { type: 'duration', icon: '⏱', text: '2 hodiny', color: 'green' },
+      { type: 'description', icon: '📝', text: 'Schůzka s klientem', color: 'gray' },
+      { type: 'tag', icon: '#', text: 'meeting', color: 'orange' },
+      { type: 'client', icon: '@', text: 'ACME', color: 'pink' }
+    ]
+  },
+  {
+    input: "pondělí 10:00 30m Code review #development @TechCorp",
+    parsed: [
+      { type: 'date', icon: '📅', text: 'pondělí', color: 'blue' },
+      { type: 'time', icon: '⏰', text: '10:00', color: 'purple' },
+      { type: 'duration', icon: '⏱', text: '30 minut', color: 'green' },
+      { type: 'description', icon: '📝', text: 'Code review', color: 'gray' },
+      { type: 'tag', icon: '#', text: 'development', color: 'orange' },
+      { type: 'client', icon: '@', text: 'TechCorp', color: 'pink' }
+    ]
+  },
+  {
+    input: "22.1. 14:30 1,5h Workshop pro tým #training",
+    parsed: [
+      { type: 'date', icon: '📅', text: '22. ledna', color: 'blue' },
+      { type: 'time', icon: '⏰', text: '14:30', color: 'purple' },
+      { type: 'duration', icon: '⏱', text: '1,5 hodiny', color: 'green' },
+      { type: 'description', icon: '📝', text: 'Workshop pro tým', color: 'gray' },
+      { type: 'tag', icon: '#', text: 'training', color: 'orange' }
+    ]
+  }
+] as const
+
 export default function Landing() {
   const [activeDemo, setActiveDemo] = useState(0)
 
-  const demoExamples = [
-    {
-      input: "včera 2h Schůzka s klientem #meeting @ACME",
-      parsed: [
-        { type: 'date', icon: '📅', text: 'včera', color: 'blue' },
-        { type: 'duration', icon: '⏱', text: '2 hodiny', color: 'green' },
-        { type: 'description', icon: '📝', text: 'Schůzka s klientem', color: 'gray' },
-        { type: 'tag', icon: '#', text: 'meeting', color: 'orange' },
-        { type: 'client', icon: '@', text: 'ACME', color: 'pink' }
-      ]
-    },
-    {
-      input: "pondělí 10:00 30m Code review #development @TechCorp",
-      parsed: [
-        { type: 'date', icon: '📅', text: 'pondělí', color: 'blue' },
-        { type: 'time', icon: '⏰', text: '10:00', color: 'purple' },
-        { type: 'duration', icon: '⏱', text: '30 minut', color: 'green' },
-        { type: 'description', icon: '📝', text: 'Code review', color: 'gray' },
-        { type: 'tag', icon: '#', text: 'development', color: 'orange' },
-        { type: 'client', icon: '@', text: 'TechCorp', color: 'pink' }
-      ]
-    },
-    {
-      input: "22.1. 14:30 1,5h Workshop pro tým #training",
-      parsed: [
-        { type: 'date', icon: '📅', text: '22. ledna', color: 'blue' },
-        { type: 'time', icon: '⏰', text: '14:30', color: 'purple' },
-        { type: 'duration', icon: '⏱', text: '1,5 hodiny', color: 'green' },
-        { type: 'description', icon: '📝', text: 'Workshop pro tým', color: 'gray' },
-        { type: 'tag', icon: '#', text: 'training', color: 'orange' }
-      ]
-    }
-  ]
-
   useEffect(() => {
     const interval = setInterval(() => {
-      setActiveDemo((prev) => (prev + 1) % demoExamples.length)
+      setActiveDemo((prev) => (prev + 1) % DEMO_EXAMPLES.length)
     }, 4000)
     return () => clearInterval(interval)
   }, [])
 
-  const currentDemo = demoExamples[activeDemo]
+  const currentDemo = DEMO_EXAMPLES[activeDemo]
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-blue-50">
@@ -207,7 +208,7 @@ export default function Landing() {
 
           {/* Demo Navigation Dots */}
           <div className="flex justify-center gap-2 mt-8">
-            {demoExamples.map((_, idx) => (
+            {DEMO_EXAMPLES.map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => setActiveDemo(idx)}
@@ -387,7 +388,7 @@ export default function Landing() {
 
             <div className="flex items-center gap-6 text-sm text-gray-600">
               <Link to="/changelog" className="hover:text-primary-600 transition-colors">
-                Changelog (v0.5.0)
+                Changelog (v0.5.1)
               </Link>
               <span className="text-gray-400">•</span>
               <span>&copy; 2025-2026 Patrick Zandl</span>

@@ -2,9 +2,39 @@
 <html lang="cs">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Progressor - jednoduchý time tracking pro freelancery. Zaznamenej práci jedním řádkem textu." />
+    <meta name="theme-color" content="#4F46E5" />
+
+    <!-- Preconnect pro rychlejší API spojení -->
+    <link rel="preconnect" href="https://progressor-api.zandl.workers.dev" crossorigin />
+    <link rel="dns-prefetch" href="https://progressor-api.zandl.workers.dev" />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>Progressor - Zaznamenávej svůj pokrok</title>
+
+    <!-- Kritické inline CSS pro okamžité zobrazení loaderu -->
+    <style>
+      #root:empty {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background: #f9fafb;
+      }
+      #root:empty::after {
+        content: "";
+        width: 2rem;
+        height: 2rem;
+        border: 2px solid #e5e7eb;
+        border-top-color: #4F46E5;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

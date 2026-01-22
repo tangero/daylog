@@ -18,4 +18,18 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Vendor chunks pro lepší cache
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'query': ['@tanstack/react-query'],
+        },
+      },
+    },
+    // Optimalizace velikosti
+    target: 'esnext',
+    minify: 'esbuild',
+  },
 })

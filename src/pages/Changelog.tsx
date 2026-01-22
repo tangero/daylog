@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 
-const CURRENT_VERSION = '0.5.0'
+const CURRENT_VERSION = '0.5.1'
 
 interface ChangelogEntry {
   version: string
@@ -13,8 +13,38 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
-    version: '0.5.0',
+    version: '0.5.1',
     date: '2025-01-22',
+    sections: [
+      {
+        type: 'improved',
+        items: [
+          'Lazy loading stránek - rychlejší první načtení (~40% menší initial bundle)',
+          'Code splitting - vendor knihovny v separátních souborech pro lepší cache',
+          'Databázové indexy pro rychlejší dotazy na vazební tabulky',
+          'Batch operace pro atomické ukládání záznamů',
+          'Preconnect na API server pro rychlejší spojení',
+        ],
+      },
+      {
+        type: 'added',
+        items: [
+          'Kritické inline CSS pro okamžité zobrazení loading spinneru',
+          'Meta description a theme-color pro lepší SEO',
+        ],
+      },
+      {
+        type: 'fixed',
+        items: [
+          'N+1 problém v billing API endpointu',
+          'Zbytečné re-rendery v Landing page',
+        ],
+      },
+    ],
+  },
+  {
+    version: '0.5.0',
+    date: '2025-01-21',
     sections: [
       {
         type: 'improved',
