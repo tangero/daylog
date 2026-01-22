@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { API_BASE } from '../lib/config'
+import { formatDuration } from '../lib/parser'
 
 interface ClientsProps {
   onLogout: () => void
@@ -21,14 +22,6 @@ async function fetchClients(): Promise<Client[]> {
   })
   if (!res.ok) throw new Error('Nepodařilo se načíst klienty')
   return res.json()
-}
-
-function formatTotalTime(minutes: number): string {
-  const hours = Math.floor(minutes / 60)
-  const mins = minutes % 60
-  if (hours === 0) return `${mins}m`
-  if (mins === 0) return `${hours}h`
-  return `${hours}h ${mins}m`
 }
 
 export default function Clients({ onLogout, userEmail }: ClientsProps) {
@@ -127,7 +120,7 @@ export default function Clients({ onLogout, userEmail }: ClientsProps) {
                 </div>
                 <div className="flex items-center gap-4 text-sm">
                   <span className="text-green-600 font-semibold">
-                    {formatTotalTime(client.totalMinutes)}
+                    {formatDuration(client.totalMinutes)}
                   </span>
                   <span className="text-gray-500">
                     {client.count} záznamů
@@ -149,7 +142,7 @@ export default function Clients({ onLogout, userEmail }: ClientsProps) {
       <footer className="border-t border-gray-200 mt-8">
         <div className="max-w-4xl mx-auto px-4 py-4 text-center">
           <Link to="/changelog" className="text-sm text-gray-500 hover:text-gray-700">
-            v0.3.0
+            v0.5.0
           </Link>
         </div>
       </footer>

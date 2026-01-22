@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { API_BASE } from '../../lib/config'
+import { formatDuration } from '../../lib/parser'
 
 interface Period {
   from: string
@@ -32,14 +33,6 @@ async function fetchStats(from: string, to: string): Promise<StatsSummaryData> {
   })
   if (!res.ok) throw new Error('Nepodařilo se načíst statistiky')
   return res.json()
-}
-
-function formatTime(minutes: number): string {
-  const hours = Math.floor(minutes / 60)
-  const mins = minutes % 60
-  if (hours === 0) return `${mins}m`
-  if (mins === 0) return `${hours}h`
-  return `${hours}h ${mins}m`
 }
 
 export default function StatsSummary({ period, onClientClick }: StatsSummaryProps) {
@@ -78,7 +71,7 @@ export default function StatsSummary({ period, onClientClick }: StatsSummaryProp
         <div className="grid grid-cols-3 gap-6 text-center">
           <div>
             <div className="text-3xl font-bold text-gray-900">
-              {formatTime(totals.totalMinutes)}
+              {formatDuration(totals.totalMinutes)}
             </div>
             <div className="text-sm text-gray-500 mt-1">celkem</div>
           </div>
@@ -92,7 +85,7 @@ export default function StatsSummary({ period, onClientClick }: StatsSummaryProp
           </div>
           <div>
             <div className="text-3xl font-bold text-gray-900">
-              {formatTime(totals.avgMinutesPerDay)}
+              {formatDuration(totals.avgMinutesPerDay)}
             </div>
             <div className="text-sm text-gray-500 mt-1">průměr/den</div>
           </div>
@@ -113,7 +106,7 @@ export default function StatsSummary({ period, onClientClick }: StatsSummaryProp
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-pink-600 font-medium">@{client.name}</span>
                   <span className="text-gray-900 font-medium">
-                    {formatTime(client.totalMinutes)}
+                    {formatDuration(client.totalMinutes)}
                     <span className="text-gray-400 ml-2">({client.percentage}%)</span>
                   </span>
                 </div>
@@ -140,7 +133,7 @@ export default function StatsSummary({ period, onClientClick }: StatsSummaryProp
                 className="inline-flex items-center gap-2 px-3 py-1.5 bg-orange-50 text-orange-700 rounded-full text-sm"
               >
                 <span className="font-medium">#{tag.name}</span>
-                <span className="text-orange-500">{formatTime(tag.totalMinutes)}</span>
+                <span className="text-orange-500">{formatDuration(tag.totalMinutes)}</span>
               </span>
             ))}
           </div>

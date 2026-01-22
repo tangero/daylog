@@ -1,11 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { API_BASE } from '../lib/config'
-
-interface Entry {
-  id: string
-  parsedDate: string
-  durationMinutes: number
-}
+import { formatDuration } from '../lib/parser'
+import type { EntryMinimal } from '../lib/api'
 
 interface WeekStatsProps {
   refreshKey: number
@@ -51,16 +47,7 @@ function formatWeekRange(dates: Date[]): string {
   return `${startStr} - ${endStr}`
 }
 
-function formatMinutes(minutes: number): string {
-  if (minutes === 0) return '0h'
-  const hours = Math.floor(minutes / 60)
-  const mins = minutes % 60
-  if (hours === 0) return `${mins}m`
-  if (mins === 0) return `${hours}h`
-  return `${hours}h${mins}m`
-}
-
-async function fetchEntries(): Promise<Entry[]> {
+async function fetchEntries(): Promise<EntryMinimal[]> {
   const token = localStorage.getItem('token')
   const res = await fetch(`${API_BASE}/api/entries`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -130,7 +117,7 @@ export default function WeekStats({ refreshKey, weekOffset, onWeekChange, onDayC
             <span className="font-medium">{day.dayName}</span>
             {' '}
             <span className={day.totalMinutes > 0 ? 'text-green-600' : 'text-gray-400'}>
-              {formatMinutes(day.totalMinutes)}
+              {formatDuration(day.totalMinutes)}
             </span>
           </button>
         ))}

@@ -10,7 +10,7 @@ import Hashtags from './pages/Hashtags'
 import Clients from './pages/Clients'
 import Stats from './pages/Stats'
 import Changelog from './pages/Changelog'
-import { isTokenValid, setAuthErrorHandler, getUserFromToken } from './lib/api'
+import { isTokenValid, setAuthErrorHandler, getUserFromToken, getToken, removeToken } from './lib/api'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
@@ -27,8 +27,8 @@ function App() {
     } else {
       setUserEmail(null)
       // Pokud token existuje ale není platný, smazat ho
-      if (localStorage.getItem('token')) {
-        localStorage.removeItem('token')
+      if (getToken()) {
+        removeToken()
       }
     }
 

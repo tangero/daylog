@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import DOMPurify from 'dompurify'
 import { API_BASE } from '../lib/config'
 
 interface Project {
@@ -35,11 +36,11 @@ async function saveProject(tagName: string, data: { name: string | null; descrip
   if (!res.ok) throw new Error('Nepodařilo se uložit projekt')
 }
 
-// Simple markdown to HTML converter
+// Simple markdown to HTML converter with XSS protection
 function renderMarkdown(text: string): string {
   if (!text) return ''
 
-  return text
+  const html = text
     // Headers
     .replace(/^### (.+)$/gm, '<h3 class="text-lg font-semibold mt-3 mb-1">$1</h3>')
     .replace(/^## (.+)$/gm, '<h2 class="text-xl font-semibold mt-4 mb-2">$1</h2>')
@@ -47,8 +48,8 @@ function renderMarkdown(text: string): string {
     // Bold and italic
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    // Links
-    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" class="text-primary-600 hover:underline" target="_blank" rel="noopener">$1</a>')
+    // Links - pouze http/https
+    .replace(/\[(.+?)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" class="text-primary-600 hover:underline" target="_blank" rel="noopener noreferrer">$1</a>')
     // Code
     .replace(/`(.+?)`/g, '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm">$1</code>')
     // Lists
@@ -56,6 +57,12 @@ function renderMarkdown(text: string): string {
     .replace(/(<li.*<\/li>\n?)+/g, '<ul class="list-disc my-2">$&</ul>')
     // Line breaks
     .replace(/\n/g, '<br>')
+
+  // Sanitize HTML to prevent XSS attacks
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['h1', 'h2', 'h3', 'strong', 'em', 'a', 'code', 'ul', 'li', 'br'],
+    ALLOWED_ATTR: ['href', 'class', 'target', 'rel'],
+  })
 }
 
 export default function ProjectDetail({ tagName, onClose }: ProjectDetailProps) {

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { API_BASE } from '../lib/config'
+import { setToken } from '../lib/api'
 
 interface RegisterProps {
   onRegister: () => void
@@ -42,7 +43,7 @@ export default function Register({ onRegister }: RegisterProps) {
         throw new Error(data.error || 'Registrace selhala')
       }
 
-      localStorage.setItem('token', data.token)
+      setToken(data.token)
       onRegister()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Něco se pokazilo')

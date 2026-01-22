@@ -1,5 +1,8 @@
 import { Hono } from 'hono'
 import { sign } from 'hono/jwt'
+import bcrypt from 'bcryptjs'
+import { z } from 'zod'
+import { authRateLimit, passwordResetRateLimit } from '../middleware/rateLimit'
 
 interface Env {
   DB: D1Database
@@ -7,23 +10,57 @@ interface Env {
   RESEND_API_KEY: string
 }
 
+// Zod schémata pro validaci
+const emailSchema = z.string()
+  .email('Neplatný formát emailu')
+  .max(255, 'Email je příliš dlouhý')
+  .transform(val => val.toLowerCase())
+
+const passwordSchema = z.string()
+  .min(8, 'Heslo musí mít alespoň 8 znaků')
+  .max(100, 'Heslo je příliš dlouhé')
+
+const authSchema = z.object({
+  email: emailSchema,
+  password: passwordSchema,
+})
+
+const resetPasswordSchema = z.object({
+  token: z.string().min(1, 'Token je povinný'),
+  password: passwordSchema,
+})
+
 export const authRoutes = new Hono<{ Bindings: Env }>()
 
-// Hashování hesel pomocí SHA-256 + salt (pro Cloudflare Workers kompatibilitu)
+// Rate limiting pro auth routy
+authRoutes.use('/login', authRateLimit)
+authRoutes.use('/register', authRateLimit)
+authRoutes.use('/forgot-password', passwordResetRateLimit)
+authRoutes.use('/reset-password', passwordResetRateLimit)
+
+// Bezpečné hashování hesel pomocí bcrypt
+const BCRYPT_ROUNDS = 12
+
 async function hashPassword(password: string): Promise<string> {
-  const encoder = new TextEncoder()
-  const data = encoder.encode(password + 'progressor-salt')
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+  return bcrypt.hash(password, BCRYPT_ROUNDS)
 }
 
 async function verifyPassword(password: string, hash: string): Promise<boolean> {
   if (!hash || !password) {
     return false
   }
-  const inputHash = await hashPassword(password)
-  return inputHash === hash
+  // Zpětná kompatibilita: detekce starého SHA-256 hashe (64 hex znaků)
+  if (hash.length === 64 && /^[a-f0-9]+$/.test(hash)) {
+    // Starý SHA-256 hash - ověřit starým způsobem
+    const encoder = new TextEncoder()
+    const data = encoder.encode(password + 'progressor-salt')
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    const oldHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+    return oldHash === hash
+  }
+  // Nový bcrypt hash
+  return bcrypt.compare(password, hash)
 }
 
 function generateId(): string {
@@ -33,38 +70,39 @@ function generateId(): string {
 // Registrace
 authRoutes.post('/register', async (c) => {
   try {
-  const { email, password } = await c.req.json<{ email: string; password: string }>()
+    // Validace vstupu
+    const rawBody = await c.req.json()
+    const parseResult = authSchema.safeParse(rawBody)
 
-  if (!email || !password) {
-    return c.json({ error: 'Email a heslo jsou povinné' }, 400)
-  }
+    if (!parseResult.success) {
+      const errors = parseResult.error.errors.map(e => e.message).join(', ')
+      return c.json({ error: errors }, 400)
+    }
 
-  if (password.length < 8) {
-    return c.json({ error: 'Heslo musí mít alespoň 8 znaků' }, 400)
-  }
+    const { email, password } = parseResult.data
 
-  // Zkontrolovat zda email již existuje
-  const existing = await c.env.DB.prepare(
-    'SELECT id FROM users WHERE email = ?'
-  ).bind(email.toLowerCase()).first()
+    // Zkontrolovat zda email již existuje
+    const existing = await c.env.DB.prepare(
+      'SELECT id FROM users WHERE email = ?'
+    ).bind(email).first()
 
-  if (existing) {
-    return c.json({ error: 'Tento email je již registrován' }, 400)
-  }
+    if (existing) {
+      return c.json({ error: 'Tento email je již registrován' }, 400)
+    }
 
-  const id = generateId()
-  const passwordHash = await hashPassword(password)
+    const id = generateId()
+    const passwordHash = await hashPassword(password)
 
-  await c.env.DB.prepare(
-    'INSERT INTO users (id, email, password_hash) VALUES (?, ?, ?)'
-  ).bind(id, email.toLowerCase(), passwordHash).run()
+    await c.env.DB.prepare(
+      'INSERT INTO users (id, email, password_hash) VALUES (?, ?, ?)'
+    ).bind(id, email, passwordHash).run()
 
-  const token = await sign(
-    { sub: id, email: email.toLowerCase(), exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 },
-    c.env.JWT_SECRET
-  )
+    const token = await sign(
+      { sub: id, email, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 },
+      c.env.JWT_SECRET
+    )
 
-  return c.json({ token, user: { id, email: email.toLowerCase() } })
+    return c.json({ token, user: { id, email } })
   } catch (error) {
     console.error('[REGISTER] Error:', error)
     return c.json({ error: String(error) }, 500)
@@ -81,15 +119,20 @@ function generateResetToken(): string {
 // Přihlášení
 authRoutes.post('/login', async (c) => {
   try {
-    const { email, password } = await c.req.json<{ email: string; password: string }>()
+    // Validace vstupu
+    const rawBody = await c.req.json()
+    const parseResult = authSchema.safeParse(rawBody)
 
-    if (!email || !password) {
-      return c.json({ error: 'Email a heslo jsou povinné' }, 400)
+    if (!parseResult.success) {
+      const errors = parseResult.error.errors.map(e => e.message).join(', ')
+      return c.json({ error: errors }, 400)
     }
+
+    const { email, password } = parseResult.data
 
     const user = await c.env.DB.prepare(
       'SELECT id, email, password_hash FROM users WHERE email = ?'
-    ).bind(email.toLowerCase()).first<{ id: string; email: string; password_hash: string }>()
+    ).bind(email).first<{ id: string; email: string; password_hash: string }>()
 
     if (!user) {
       return c.json({ error: 'Neplatný email nebo heslo' }, 401)
@@ -199,15 +242,16 @@ authRoutes.post('/forgot-password', async (c) => {
 
 // Reset hesla s tokenem
 authRoutes.post('/reset-password', async (c) => {
-  const { token, password } = await c.req.json<{ token: string; password: string }>()
+  // Validace vstupu
+  const rawBody = await c.req.json()
+  const parseResult = resetPasswordSchema.safeParse(rawBody)
 
-  if (!token || !password) {
-    return c.json({ error: 'Token a nové heslo jsou povinné' }, 400)
+  if (!parseResult.success) {
+    const errors = parseResult.error.errors.map(e => e.message).join(', ')
+    return c.json({ error: errors }, 400)
   }
 
-  if (password.length < 8) {
-    return c.json({ error: 'Heslo musí mít alespoň 8 znaků' }, 400)
-  }
+  const { token, password } = parseResult.data
 
   // Najít platný token
   const resetToken = await c.env.DB.prepare(`

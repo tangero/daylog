@@ -10,6 +10,21 @@ export function setAuthErrorHandler(handler: () => void) {
   onAuthError = handler
 }
 
+// Centralizovaná práce s tokenem
+const TOKEN_KEY = 'token'
+
+export function getToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY)
+}
+
+export function setToken(token: string): void {
+  localStorage.setItem(TOKEN_KEY, token)
+}
+
+export function removeToken(): void {
+  localStorage.removeItem(TOKEN_KEY)
+}
+
 // Dekódování JWT tokenu (bez ověření podpisu - to dělá server)
 interface TokenPayload {
   sub: string
@@ -30,7 +45,7 @@ export function decodeToken(token: string): TokenPayload | null {
 
 // Kontrola, zda je token platný (nevypršel)
 export function isTokenValid(): boolean {
-  const token = localStorage.getItem('token')
+  const token = getToken()
   if (!token) return false
 
   const payload = decodeToken(token)
@@ -42,7 +57,7 @@ export function isTokenValid(): boolean {
 
 // Získání informací o uživateli z tokenu
 export function getUserFromToken(): { id: string; email: string } | null {
-  const token = localStorage.getItem('token')
+  const token = getToken()
   if (!token) return null
 
   const payload = decodeToken(token)
@@ -53,7 +68,7 @@ export function getUserFromToken(): { id: string; email: string } | null {
 
 // Odhlášení - smazat token
 export function logout() {
-  localStorage.removeItem('token')
+  removeToken()
   if (onAuthError) {
     onAuthError()
   }
@@ -63,7 +78,7 @@ export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const token = localStorage.getItem('token')
+  const token = getToken()
 
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
@@ -146,6 +161,13 @@ export interface Entry {
   createdAt: string
 }
 
+// Minimální verze Entry pro komponenty, které nepotřebují všechna pole
+export interface EntryMinimal {
+  id: string
+  parsedDate: string
+  durationMinutes: number
+}
+
 export interface CreateEntryData {
   rawText: string
   date: string
@@ -159,11 +181,20 @@ export interface CreateEntryData {
 export interface Tag {
   name: string
   count: number
+  totalMinutes?: number  // Používáno v Hashtags
 }
 
 export interface Client {
+  id?: string  // Volitelné - používáno v billing
   name: string
   count: number
   totalMinutes: number
   entriesWithoutDuration: number
+  hourlyRate?: number | null  // Volitelné - používáno v billing
+}
+
+export interface Project {
+  tagName: string
+  name: string | null
+  description: string | null
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { API_BASE } from '../lib/config'
+import { setToken } from '../lib/api'
 
 interface LoginProps {
   onLogin: () => void
@@ -30,7 +31,7 @@ export default function Login({ onLogin }: LoginProps) {
         throw new Error(data.error || 'Přihlášení selhalo')
       }
 
-      localStorage.setItem('token', data.token)
+      setToken(data.token)
       onLogin()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Něco se pokazilo')

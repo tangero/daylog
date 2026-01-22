@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import { z } from 'zod'
 
 interface Env {
   DB: D1Database
@@ -10,18 +11,32 @@ interface JWTPayload {
   email: string
 }
 
+// Zod schémata pro validaci
+const entrySchema = z.object({
+  rawText: z.string().min(1, 'Text záznamu je povinný').max(5000, 'Text je příliš dlouhý'),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Neplatný formát data (očekáváno YYYY-MM-DD)'),
+  time: z.string().regex(/^\d{2}:\d{2}$/, 'Neplatný formát času').nullable(),
+  durationMinutes: z.number().int().min(0).max(1440), // max 24 hodin
+  description: z.string().max(5000, 'Popis je příliš dlouhý'),
+  hashtags: z.array(z.string().max(50)).max(20, 'Maximálně 20 hashtagů'),
+  clients: z.array(z.string().max(100)).max(10, 'Maximálně 10 klientů'),
+})
+
+type EntryInput = z.infer<typeof entrySchema>
+
 export const entriesRoutes = new Hono<{ Bindings: Env; Variables: { jwtPayload: JWTPayload } }>()
 
 function generateId(): string {
   return crypto.randomUUID()
 }
 
-// Získat záznamy
+// Získat záznamy - optimalizováno pomocí GROUP_CONCAT (1 query místo N+1)
 entriesRoutes.get('/', async (c) => {
   const userId = c.get('jwtPayload').sub
   const filterType = c.req.query('filterType')
   const filterValue = c.req.query('filterValue')
 
+  // Základní query s agregovanými tagy a klienty
   let query = `
     SELECT
       e.id,
@@ -30,7 +45,19 @@ entriesRoutes.get('/', async (c) => {
       e.parsed_time as parsedTime,
       e.duration_minutes as durationMinutes,
       e.description,
-      e.created_at as createdAt
+      e.created_at as createdAt,
+      (
+        SELECT GROUP_CONCAT(t.name, ',')
+        FROM entry_tags et
+        JOIN tags t ON et.tag_id = t.id
+        WHERE et.entry_id = e.id
+      ) as tagsStr,
+      (
+        SELECT GROUP_CONCAT(cl.name, ',')
+        FROM entry_clients ec
+        JOIN clients cl ON ec.client_id = cl.id
+        WHERE ec.entry_id = e.id
+      ) as clientsStr
     FROM entries e
     WHERE e.user_id = ?
   `
@@ -66,28 +93,23 @@ entriesRoutes.get('/', async (c) => {
 
   const entries = await c.env.DB.prepare(query).bind(...params).all()
 
-  // Načíst tagy a klienty pro každý záznam
-  const results = await Promise.all(
-    (entries.results || []).map(async (entry: Record<string, unknown>) => {
-      const tags = await c.env.DB.prepare(`
-        SELECT t.name FROM tags t
-        JOIN entry_tags et ON t.id = et.tag_id
-        WHERE et.entry_id = ?
-      `).bind(entry.id).all()
+  // Transformovat výsledky - rozdělit tagsStr a clientsStr na pole
+  const results = (entries.results || []).map((entry: Record<string, unknown>) => {
+    const tagsStr = entry.tagsStr as string | null
+    const clientsStr = entry.clientsStr as string | null
 
-      const clients = await c.env.DB.prepare(`
-        SELECT cl.name FROM clients cl
-        JOIN entry_clients ec ON cl.id = ec.client_id
-        WHERE ec.entry_id = ?
-      `).bind(entry.id).all()
-
-      return {
-        ...entry,
-        hashtags: (tags.results || []).map((t: Record<string, unknown>) => t.name),
-        clients: (clients.results || []).map((cl: Record<string, unknown>) => cl.name),
-      }
-    })
-  )
+    return {
+      id: entry.id,
+      rawText: entry.rawText,
+      parsedDate: entry.parsedDate,
+      parsedTime: entry.parsedTime,
+      durationMinutes: entry.durationMinutes,
+      description: entry.description,
+      createdAt: entry.createdAt,
+      hashtags: tagsStr ? tagsStr.split(',') : [],
+      clients: clientsStr ? clientsStr.split(',') : [],
+    }
+  })
 
   return c.json(results)
 })
@@ -95,15 +117,17 @@ entriesRoutes.get('/', async (c) => {
 // Vytvořit záznam
 entriesRoutes.post('/', async (c) => {
   const userId = c.get('jwtPayload').sub
-  const body = await c.req.json<{
-    rawText: string
-    date: string
-    time: string | null
-    durationMinutes: number
-    description: string
-    hashtags: string[]
-    clients: string[]
-  }>()
+
+  // Validace vstupu
+  const rawBody = await c.req.json()
+  const parseResult = entrySchema.safeParse(rawBody)
+
+  if (!parseResult.success) {
+    const errors = parseResult.error.errors.map(e => e.message).join(', ')
+    return c.json({ error: `Neplatná data: ${errors}` }, 400)
+  }
+
+  const body = parseResult.data
 
   const entryId = generateId()
 
@@ -168,15 +192,17 @@ entriesRoutes.post('/', async (c) => {
 entriesRoutes.put('/:id', async (c) => {
   const userId = c.get('jwtPayload').sub
   const entryId = c.req.param('id')
-  const body = await c.req.json<{
-    rawText: string
-    date: string
-    time: string | null
-    durationMinutes: number
-    description: string
-    hashtags: string[]
-    clients: string[]
-  }>()
+
+  // Validace vstupu
+  const rawBody = await c.req.json()
+  const parseResult = entrySchema.safeParse(rawBody)
+
+  if (!parseResult.success) {
+    const errors = parseResult.error.errors.map(e => e.message).join(', ')
+    return c.json({ error: `Neplatná data: ${errors}` }, 400)
+  }
+
+  const body = parseResult.data
 
   // Ověřit vlastnictví
   const entry = await c.env.DB.prepare(

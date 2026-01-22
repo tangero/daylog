@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 
-const CURRENT_VERSION = '0.4.1'
+const CURRENT_VERSION = '0.5.0'
 
 interface ChangelogEntry {
   version: string
@@ -12,6 +12,36 @@ interface ChangelogEntry {
 }
 
 const changelog: ChangelogEntry[] = [
+  {
+    version: '0.5.0',
+    date: '2025-01-22',
+    sections: [
+      {
+        type: 'improved',
+        items: [
+          'Bezpečnější hashování hesel pomocí bcrypt (zpětně kompatibilní)',
+          'Validace vstupů na API pomocí Zod schémat',
+          'Ochrana proti XSS - sanitizace markdown výstupu pomocí DOMPurify',
+          'Rate limiting na přihlašování a registraci',
+          'Optimalizace databázových dotazů (N+1 problém vyřešen)',
+        ],
+      },
+      {
+        type: 'added',
+        items: [
+          'ErrorBoundary pro lepší zachytávání chyb v UI',
+          'Centralizované funkce pro práci s autentizačním tokenem',
+          'Sdílené TypeScript typy pro lepší typovou bezpečnost',
+        ],
+      },
+      {
+        type: 'removed',
+        items: [
+          'Nepoužívané komponenty ClientList a TagCloud',
+        ],
+      },
+    ],
+  },
   {
     version: '0.4.1',
     date: '2025-01-14',
