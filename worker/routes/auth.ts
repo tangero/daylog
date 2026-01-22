@@ -177,19 +177,20 @@ authRoutes.post('/forgot-password', async (c) => {
     return c.json({ success: true, message: 'Pokud email existuje, obdržíte instrukce pro reset hesla.' })
   }
 
-  // Invalidovat staré tokeny
-  await c.env.DB.prepare(
-    'DELETE FROM password_reset_tokens WHERE user_id = ? AND used_at IS NULL'
-  ).bind(user.id).run()
-
   // Vytvořit nový token (platný 1 hodinu)
   const resetToken = generateResetToken()
   const tokenId = generateId()
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString()
 
-  await c.env.DB.prepare(
-    'INSERT INTO password_reset_tokens (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)'
-  ).bind(tokenId, user.id, resetToken, expiresAt).run()
+  // Atomicky: invalidovat staré tokeny a vytvořit nový
+  await c.env.DB.batch([
+    c.env.DB.prepare(
+      'DELETE FROM password_reset_tokens WHERE user_id = ? AND used_at IS NULL'
+    ).bind(user.id),
+    c.env.DB.prepare(
+      'INSERT INTO password_reset_tokens (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)'
+    ).bind(tokenId, user.id, resetToken, expiresAt)
+  ])
 
   const resetUrl = `https://progressor.work/reset-password?token=${resetToken}`
 

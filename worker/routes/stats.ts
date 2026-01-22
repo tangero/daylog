@@ -170,14 +170,20 @@ statsRoutes.get('/billing', async (c) => {
     hourlyRate = clientData?.hourly_rate || null
   }
 
-  // Načíst záznamy pro klienta
+  // Načíst záznamy pro klienta včetně tagů (optimalizováno - 1 dotaz místo N+1)
   const entriesResult = await c.env.DB.prepare(`
     SELECT
       e.id,
       e.parsed_date as date,
       e.parsed_time as time,
       e.duration_minutes as durationMinutes,
-      e.description
+      e.description,
+      (
+        SELECT GROUP_CONCAT(t.name, ',')
+        FROM entry_tags et
+        JOIN tags t ON et.tag_id = t.id
+        WHERE et.entry_id = e.id
+      ) as tagsStr
     FROM entries e
     JOIN entry_clients ec ON e.id = ec.entry_id
     JOIN clients c ON ec.client_id = c.id
@@ -185,25 +191,18 @@ statsRoutes.get('/billing', async (c) => {
     ORDER BY e.parsed_date, e.parsed_time
   `).bind(userId, client, from, to).all()
 
-  // Načíst tagy pro každý záznam
-  const entries = await Promise.all(
-    (entriesResult.results || []).map(async (entry: Record<string, unknown>) => {
-      const tagsResult = await c.env.DB.prepare(`
-        SELECT t.name FROM tags t
-        JOIN entry_tags et ON t.id = et.tag_id
-        WHERE et.entry_id = ?
-      `).bind(entry.id).all()
-
-      return {
-        id: entry.id as string,
-        date: entry.date as string,
-        time: entry.time as string | null,
-        durationMinutes: entry.durationMinutes as number,
-        description: entry.description as string,
-        tags: (tagsResult.results || []).map((t: Record<string, unknown>) => t.name as string)
-      }
-    })
-  )
+  // Transformovat výsledky - rozdělit tagsStr na pole
+  const entries = (entriesResult.results || []).map((entry: Record<string, unknown>) => {
+    const tagsStr = entry.tagsStr as string | null
+    return {
+      id: entry.id as string,
+      date: entry.date as string,
+      time: entry.time as string | null,
+      durationMinutes: entry.durationMinutes as number,
+      description: entry.description as string,
+      tags: tagsStr ? tagsStr.split(',') : []
+    }
+  })
 
   // Spočítat souhrn
   const totalMinutes = entries.reduce((sum, e) => sum + e.durationMinutes, 0)

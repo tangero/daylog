@@ -114,7 +114,7 @@ entriesRoutes.get('/', async (c) => {
   return c.json(results)
 })
 
-// Vytvořit záznam
+// Vytvořit záznam - optimalizováno s batch operacemi pro atomicitu
 entriesRoutes.post('/', async (c) => {
   const userId = c.get('jwtPayload').sub
 
@@ -128,67 +128,80 @@ entriesRoutes.post('/', async (c) => {
   }
 
   const body = parseResult.data
-
   const entryId = generateId()
 
-  // Vložit záznam
-  await c.env.DB.prepare(`
-    INSERT INTO entries (id, user_id, raw_text, parsed_date, parsed_time, duration_minutes, description)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).bind(
-    entryId,
-    userId,
-    body.rawText,
-    body.date,
-    body.time,
-    body.durationMinutes,
-    body.description
-  ).run()
+  // Připravit batch operace
+  const statements: D1PreparedStatement[] = []
 
-  // Zpracovat hashtagy
+  // 1. Vložit záznam
+  statements.push(
+    c.env.DB.prepare(`
+      INSERT INTO entries (id, user_id, raw_text, parsed_date, parsed_time, duration_minutes, description)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).bind(entryId, userId, body.rawText, body.date, body.time, body.durationMinutes, body.description)
+  )
+
+  // 2. Načíst existující tagy najednou (pokud nějaké jsou)
+  const tagIds: Map<string, string> = new Map()
+  if (body.hashtags.length > 0) {
+    const placeholders = body.hashtags.map(() => '?').join(',')
+    const existingTags = await c.env.DB.prepare(
+      `SELECT id, name FROM tags WHERE user_id = ? AND name IN (${placeholders})`
+    ).bind(userId, ...body.hashtags).all<{ id: string; name: string }>()
+
+    for (const tag of existingTags.results || []) {
+      tagIds.set(tag.name, tag.id)
+    }
+  }
+
+  // Vytvořit chybějící tagy a propojení
   for (const tagName of body.hashtags) {
-    // Najít nebo vytvořit tag
-    let tag = await c.env.DB.prepare(
-      'SELECT id FROM tags WHERE user_id = ? AND name = ?'
-    ).bind(userId, tagName).first<{ id: string }>()
-
-    if (!tag) {
-      const tagId = generateId()
-      await c.env.DB.prepare(
-        'INSERT INTO tags (id, user_id, name) VALUES (?, ?, ?)'
-      ).bind(tagId, userId, tagName).run()
-      tag = { id: tagId }
+    let tagId = tagIds.get(tagName)
+    if (!tagId) {
+      tagId = generateId()
+      statements.push(
+        c.env.DB.prepare('INSERT INTO tags (id, user_id, name) VALUES (?, ?, ?)').bind(tagId, userId, tagName)
+      )
     }
-
-    // Propojit s entry
-    await c.env.DB.prepare(
-      'INSERT INTO entry_tags (entry_id, tag_id) VALUES (?, ?)'
-    ).bind(entryId, tag.id).run()
+    statements.push(
+      c.env.DB.prepare('INSERT INTO entry_tags (entry_id, tag_id) VALUES (?, ?)').bind(entryId, tagId)
+    )
   }
 
-  // Zpracovat klienty
+  // 3. Načíst existující klienty najednou (pokud nějací jsou)
+  const clientIds: Map<string, string> = new Map()
+  if (body.clients.length > 0) {
+    const placeholders = body.clients.map(() => '?').join(',')
+    const existingClients = await c.env.DB.prepare(
+      `SELECT id, name FROM clients WHERE user_id = ? AND name IN (${placeholders})`
+    ).bind(userId, ...body.clients).all<{ id: string; name: string }>()
+
+    for (const client of existingClients.results || []) {
+      clientIds.set(client.name, client.id)
+    }
+  }
+
+  // Vytvořit chybějící klienty a propojení
   for (const clientName of body.clients) {
-    let client = await c.env.DB.prepare(
-      'SELECT id FROM clients WHERE user_id = ? AND name = ?'
-    ).bind(userId, clientName).first<{ id: string }>()
-
-    if (!client) {
-      const clientId = generateId()
-      await c.env.DB.prepare(
-        'INSERT INTO clients (id, user_id, name) VALUES (?, ?, ?)'
-      ).bind(clientId, userId, clientName).run()
-      client = { id: clientId }
+    let clientId = clientIds.get(clientName)
+    if (!clientId) {
+      clientId = generateId()
+      statements.push(
+        c.env.DB.prepare('INSERT INTO clients (id, user_id, name) VALUES (?, ?, ?)').bind(clientId, userId, clientName)
+      )
     }
-
-    await c.env.DB.prepare(
-      'INSERT INTO entry_clients (entry_id, client_id) VALUES (?, ?)'
-    ).bind(entryId, client.id).run()
+    statements.push(
+      c.env.DB.prepare('INSERT INTO entry_clients (entry_id, client_id) VALUES (?, ?)').bind(entryId, clientId)
+    )
   }
+
+  // 4. Spustit vše atomicky
+  await c.env.DB.batch(statements)
 
   return c.json({ id: entryId, success: true }, 201)
 })
 
-// Upravit záznam
+// Upravit záznam - optimalizováno s batch operacemi pro atomicitu
 entriesRoutes.put('/:id', async (c) => {
   const userId = c.get('jwtPayload').sub
   const entryId = c.req.param('id')
@@ -213,89 +226,104 @@ entriesRoutes.put('/:id', async (c) => {
     return c.json({ error: 'Záznam nenalezen' }, 404)
   }
 
-  // Aktualizovat záznam
-  await c.env.DB.prepare(`
-    UPDATE entries SET
-      raw_text = ?,
-      parsed_date = ?,
-      parsed_time = ?,
-      duration_minutes = ?,
-      description = ?
-    WHERE id = ?
-  `).bind(
-    body.rawText,
-    body.date,
-    body.time,
-    body.durationMinutes,
-    body.description,
-    entryId
-  ).run()
+  // Připravit batch operace
+  const statements: D1PreparedStatement[] = []
 
-  // Smazat staré vazby
-  await c.env.DB.prepare('DELETE FROM entry_tags WHERE entry_id = ?').bind(entryId).run()
-  await c.env.DB.prepare('DELETE FROM entry_clients WHERE entry_id = ?').bind(entryId).run()
+  // 1. Aktualizovat záznam
+  statements.push(
+    c.env.DB.prepare(`
+      UPDATE entries SET
+        raw_text = ?,
+        parsed_date = ?,
+        parsed_time = ?,
+        duration_minutes = ?,
+        description = ?
+      WHERE id = ?
+    `).bind(body.rawText, body.date, body.time, body.durationMinutes, body.description, entryId)
+  )
 
-  // Přidat nové hashtagy
+  // 2. Smazat staré vazby
+  statements.push(
+    c.env.DB.prepare('DELETE FROM entry_tags WHERE entry_id = ?').bind(entryId)
+  )
+  statements.push(
+    c.env.DB.prepare('DELETE FROM entry_clients WHERE entry_id = ?').bind(entryId)
+  )
+
+  // 3. Načíst existující tagy najednou (pokud nějaké jsou)
+  const tagIds: Map<string, string> = new Map()
+  if (body.hashtags.length > 0) {
+    const placeholders = body.hashtags.map(() => '?').join(',')
+    const existingTags = await c.env.DB.prepare(
+      `SELECT id, name FROM tags WHERE user_id = ? AND name IN (${placeholders})`
+    ).bind(userId, ...body.hashtags).all<{ id: string; name: string }>()
+
+    for (const tag of existingTags.results || []) {
+      tagIds.set(tag.name, tag.id)
+    }
+  }
+
+  // Vytvořit chybějící tagy a propojení
   for (const tagName of body.hashtags) {
-    let tag = await c.env.DB.prepare(
-      'SELECT id FROM tags WHERE user_id = ? AND name = ?'
-    ).bind(userId, tagName).first<{ id: string }>()
-
-    if (!tag) {
-      const tagId = generateId()
-      await c.env.DB.prepare(
-        'INSERT INTO tags (id, user_id, name) VALUES (?, ?, ?)'
-      ).bind(tagId, userId, tagName).run()
-      tag = { id: tagId }
+    let tagId = tagIds.get(tagName)
+    if (!tagId) {
+      tagId = generateId()
+      statements.push(
+        c.env.DB.prepare('INSERT INTO tags (id, user_id, name) VALUES (?, ?, ?)').bind(tagId, userId, tagName)
+      )
     }
-
-    await c.env.DB.prepare(
-      'INSERT INTO entry_tags (entry_id, tag_id) VALUES (?, ?)'
-    ).bind(entryId, tag.id).run()
+    statements.push(
+      c.env.DB.prepare('INSERT INTO entry_tags (entry_id, tag_id) VALUES (?, ?)').bind(entryId, tagId)
+    )
   }
 
-  // Přidat nové klienty
+  // 4. Načíst existující klienty najednou (pokud nějací jsou)
+  const clientIds: Map<string, string> = new Map()
+  if (body.clients.length > 0) {
+    const placeholders = body.clients.map(() => '?').join(',')
+    const existingClients = await c.env.DB.prepare(
+      `SELECT id, name FROM clients WHERE user_id = ? AND name IN (${placeholders})`
+    ).bind(userId, ...body.clients).all<{ id: string; name: string }>()
+
+    for (const client of existingClients.results || []) {
+      clientIds.set(client.name, client.id)
+    }
+  }
+
+  // Vytvořit chybějící klienty a propojení
   for (const clientName of body.clients) {
-    let client = await c.env.DB.prepare(
-      'SELECT id FROM clients WHERE user_id = ? AND name = ?'
-    ).bind(userId, clientName).first<{ id: string }>()
-
-    if (!client) {
-      const clientId = generateId()
-      await c.env.DB.prepare(
-        'INSERT INTO clients (id, user_id, name) VALUES (?, ?, ?)'
-      ).bind(clientId, userId, clientName).run()
-      client = { id: clientId }
+    let clientId = clientIds.get(clientName)
+    if (!clientId) {
+      clientId = generateId()
+      statements.push(
+        c.env.DB.prepare('INSERT INTO clients (id, user_id, name) VALUES (?, ?, ?)').bind(clientId, userId, clientName)
+      )
     }
-
-    await c.env.DB.prepare(
-      'INSERT INTO entry_clients (entry_id, client_id) VALUES (?, ?)'
-    ).bind(entryId, client.id).run()
+    statements.push(
+      c.env.DB.prepare('INSERT INTO entry_clients (entry_id, client_id) VALUES (?, ?)').bind(entryId, clientId)
+    )
   }
+
+  // 5. Spustit vše atomicky
+  await c.env.DB.batch(statements)
 
   return c.json({ success: true })
 })
 
-// Smazat záznam
+// Smazat záznam - vazby se smažou automaticky díky ON DELETE CASCADE
 entriesRoutes.delete('/:id', async (c) => {
   const userId = c.get('jwtPayload').sub
   const entryId = c.req.param('id')
 
-  // Ověřit vlastnictví
-  const entry = await c.env.DB.prepare(
-    'SELECT id FROM entries WHERE id = ? AND user_id = ?'
-  ).bind(entryId, userId).first()
+  // Smazat záznam (ověří vlastnictví v podmínce WHERE)
+  // Vazby v entry_tags a entry_clients se smažou automaticky díky ON DELETE CASCADE
+  const result = await c.env.DB.prepare(
+    'DELETE FROM entries WHERE id = ? AND user_id = ?'
+  ).bind(entryId, userId).run()
 
-  if (!entry) {
+  if (result.meta.changes === 0) {
     return c.json({ error: 'Záznam nenalezen' }, 404)
   }
-
-  // Smazat vazby
-  await c.env.DB.prepare('DELETE FROM entry_tags WHERE entry_id = ?').bind(entryId).run()
-  await c.env.DB.prepare('DELETE FROM entry_clients WHERE entry_id = ?').bind(entryId).run()
-
-  // Smazat záznam
-  await c.env.DB.prepare('DELETE FROM entries WHERE id = ?').bind(entryId).run()
 
   return c.json({ success: true })
 })
