@@ -1,8 +1,9 @@
 import { Hono } from 'hono'
-import { sign } from 'hono/jwt'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 import { authRateLimit, passwordResetRateLimit } from '../middleware/rateLimit'
+import { setAuthCookies, clearAuthCookies, parseCookies } from '../lib/cookies'
+import { createAccessToken, createRefreshToken, hashRefreshToken } from '../lib/jwt'
 
 interface Env {
   DB: D1Database
@@ -97,12 +98,23 @@ authRoutes.post('/register', async (c) => {
       'INSERT INTO users (id, email, password_hash) VALUES (?, ?, ?)'
     ).bind(id, email, passwordHash).run()
 
-    const token = await sign(
-      { sub: id, email, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 },
-      c.env.JWT_SECRET
-    )
+    // Vytvořit access a refresh token
+    const accessToken = await createAccessToken(id, email, c.env.JWT_SECRET)
+    const refreshToken = await createRefreshToken()
+    const refreshTokenHash = await hashRefreshToken(refreshToken)
 
-    return c.json({ token, user: { id, email } })
+    // Uložit session do DB
+    const sessionId = generateId()
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+    await c.env.DB.prepare(`
+      INSERT INTO sessions (id, user_id, refresh_token_hash, user_agent, ip_address, expires_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).bind(sessionId, id, refreshTokenHash, c.req.header('User-Agent') || null, c.req.header('CF-Connecting-IP') || null, expiresAt).run()
+
+    // Nastavit cookies
+    setAuthCookies(c, accessToken, refreshToken)
+
+    return c.json({ user: { id, email } })
   } catch (error) {
     console.error('[REGISTER] Error:', error)
     return c.json({ error: String(error) }, 500)
@@ -148,12 +160,23 @@ authRoutes.post('/login', async (c) => {
       return c.json({ error: 'Neplatný email nebo heslo' }, 401)
     }
 
-    const token = await sign(
-      { sub: user.id, email: user.email, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 },
-      c.env.JWT_SECRET
-    )
+    // Vytvořit access a refresh token
+    const accessToken = await createAccessToken(user.id, user.email, c.env.JWT_SECRET)
+    const refreshToken = await createRefreshToken()
+    const refreshTokenHash = await hashRefreshToken(refreshToken)
 
-    return c.json({ token, user: { id: user.id, email: user.email } })
+    // Uložit session do DB
+    const sessionId = generateId()
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+    await c.env.DB.prepare(`
+      INSERT INTO sessions (id, user_id, refresh_token_hash, user_agent, ip_address, expires_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).bind(sessionId, user.id, refreshTokenHash, c.req.header('User-Agent') || null, c.req.header('CF-Connecting-IP') || null, expiresAt).run()
+
+    // Nastavit cookies
+    setAuthCookies(c, accessToken, refreshToken)
+
+    return c.json({ user: { id: user.id, email: user.email } })
   } catch (error) {
     console.error('[LOGIN] Error:', error)
     return c.json({ error: String(error) }, 500)
@@ -281,4 +304,82 @@ authRoutes.post('/reset-password', async (c) => {
   ).bind(resetToken.id).run()
 
   return c.json({ success: true, message: 'Heslo bylo úspěšně změněno' })
+})
+
+// Obnovení access tokenu pomocí refresh tokenu
+authRoutes.post('/refresh', async (c) => {
+  const cookies = parseCookies(c.req.header('Cookie'))
+  const refreshToken = cookies['refresh_token']
+
+  if (!refreshToken) {
+    return c.json({ error: 'Refresh token chybí' }, 401)
+  }
+
+  const refreshTokenHash = await hashRefreshToken(refreshToken)
+
+  const session = await c.env.DB.prepare(`
+    SELECT s.id, s.user_id, u.email
+    FROM sessions s
+    JOIN users u ON s.user_id = u.id
+    WHERE s.refresh_token_hash = ? AND s.expires_at > datetime('now') AND s.revoked_at IS NULL
+  `).bind(refreshTokenHash).first<{ id: string; user_id: string; email: string }>()
+
+  if (!session) {
+    clearAuthCookies(c)
+    return c.json({ error: 'Neplatný nebo expirovaný refresh token' }, 401)
+  }
+
+  // Rotovat refresh token
+  const newRefreshToken = await createRefreshToken()
+  const newRefreshTokenHash = await hashRefreshToken(newRefreshToken)
+  const newExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+
+  await c.env.DB.batch([
+    c.env.DB.prepare('UPDATE sessions SET revoked_at = datetime("now") WHERE id = ?').bind(session.id),
+    c.env.DB.prepare(`
+      INSERT INTO sessions (id, user_id, refresh_token_hash, user_agent, ip_address, expires_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).bind(generateId(), session.user_id, newRefreshTokenHash, c.req.header('User-Agent') || null, c.req.header('CF-Connecting-IP') || null, newExpiresAt)
+  ])
+
+  const accessToken = await createAccessToken(session.user_id, session.email, c.env.JWT_SECRET)
+  setAuthCookies(c, accessToken, newRefreshToken)
+
+  return c.json({ user: { id: session.user_id, email: session.email } })
+})
+
+// Odhlášení
+authRoutes.post('/logout', async (c) => {
+  const cookies = parseCookies(c.req.header('Cookie'))
+  const refreshToken = cookies['refresh_token']
+
+  if (refreshToken) {
+    const refreshTokenHash = await hashRefreshToken(refreshToken)
+    await c.env.DB.prepare('UPDATE sessions SET revoked_at = datetime("now") WHERE refresh_token_hash = ?').bind(refreshTokenHash).run()
+  }
+
+  clearAuthCookies(c)
+  return c.json({ success: true })
+})
+
+// Odhlášení ze všech zařízení
+authRoutes.post('/logout-all', async (c) => {
+  const cookies = parseCookies(c.req.header('Cookie'))
+  const refreshToken = cookies['refresh_token']
+
+  if (!refreshToken) {
+    return c.json({ error: 'Nepřihlášen' }, 401)
+  }
+
+  const refreshTokenHash = await hashRefreshToken(refreshToken)
+  const session = await c.env.DB.prepare(
+    'SELECT user_id FROM sessions WHERE refresh_token_hash = ? AND revoked_at IS NULL'
+  ).bind(refreshTokenHash).first<{ user_id: string }>()
+
+  if (session) {
+    await c.env.DB.prepare('UPDATE sessions SET revoked_at = datetime("now") WHERE user_id = ?').bind(session.user_id).run()
+  }
+
+  clearAuthCookies(c)
+  return c.json({ success: true })
 })

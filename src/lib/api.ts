@@ -67,10 +67,42 @@ export function getUserFromToken(): { id: string; email: string } | null {
 }
 
 // Odhlášení - smazat token
-export function logout() {
+export async function logout() {
+  try {
+    await api.logout()
+  } catch {
+    // Ignorovat chyby - uživatel bude odhlášen i tak
+  }
   removeToken()
   if (onAuthError) {
     onAuthError()
+  }
+}
+
+// Kontrola přihlášení - zkusí refresh token
+export async function checkAuth(): Promise<{ id: string; email: string } | null> {
+  // Nejdřív zkusit localStorage (zpětná kompatibilita)
+  const localUser = getUserFromToken()
+  if (localUser && isTokenValid()) {
+    return localUser
+  }
+  
+  // Zkusit refresh přes cookie
+  try {
+    const result = await api.refresh()
+    return result.user
+  } catch {
+    return null
+  }
+}
+
+export interface PaginatedResponse<T> {
+  data: T[]
+  pagination: {
+    total: number
+    limit: number
+    offset: number
+    hasMore: boolean
   }
 }
 
@@ -92,6 +124,7 @@ export async function apiRequest<T>(
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers,
+    credentials: 'include',
   })
 
   // Při 401 chybě automaticky odhlásit uživatele
@@ -111,25 +144,42 @@ export async function apiRequest<T>(
 export const api = {
   // Auth
   login: (email: string, password: string) =>
-    apiRequest<{ token: string; user: { id: string; email: string } }>('/api/auth/login', {
+    apiRequest<{ user: { id: string; email: string } }>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     }),
 
   register: (email: string, password: string) =>
-    apiRequest<{ token: string; user: { id: string; email: string } }>('/api/auth/register', {
+    apiRequest<{ user: { id: string; email: string } }>('/api/auth/register', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     }),
 
+  refresh: () =>
+    apiRequest<{ user: { id: string; email: string } }>('/api/auth/refresh', {
+      method: 'POST',
+    }),
+
+  logout: () =>
+    apiRequest<{ success: boolean }>('/api/auth/logout', {
+      method: 'POST',
+    }),
+
+  logoutAll: () =>
+    apiRequest<{ success: boolean }>('/api/auth/logout-all', {
+      method: 'POST',
+    }),
+
   // Entries
-  getEntries: (filter?: { type: string; value?: string }) => {
+  getEntries: (filter?: { type: string; value?: string }, pagination?: { limit?: number; offset?: number }) => {
     const params = new URLSearchParams()
     if (filter?.type !== 'all' && filter?.value) {
       params.set('filterType', filter.type)
       params.set('filterValue', filter.value)
     }
-    return apiRequest<Entry[]>(`/api/entries?${params}`)
+    if (pagination?.limit) params.set('limit', String(pagination.limit))
+    if (pagination?.offset) params.set('offset', String(pagination.offset))
+    return apiRequest<PaginatedResponse<Entry>>(`/api/entries?${params}`)
   },
 
   createEntry: (entry: CreateEntryData) =>

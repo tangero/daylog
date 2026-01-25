@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { z } from 'zod'
-import { escapeLikePattern } from '../lib/validation'
+import { escapeLikePattern, paginationSchema } from '../lib/validation'
 
 interface Env {
   DB: D1Database
@@ -36,6 +36,14 @@ entriesRoutes.get('/', async (c) => {
   const userId = c.get('jwtPayload').sub
   const filterType = c.req.query('filterType')
   const filterValue = c.req.query('filterValue')
+
+  const paginationResult = paginationSchema.safeParse({
+    limit: c.req.query('limit'),
+    offset: c.req.query('offset'),
+  })
+  const { limit, offset } = paginationResult.success 
+    ? paginationResult.data 
+    : { limit: 50, offset: 0 }
 
   // Základní query s agregovanými tagy a klienty
   let query = `
@@ -90,7 +98,29 @@ entriesRoutes.get('/', async (c) => {
     params.push(filterValue)
   }
 
-  query += ` ORDER BY e.parsed_date DESC, e.parsed_time DESC, e.created_at DESC LIMIT 100`
+  // Spočítat celkový počet (pro paginaci)
+  let countQuery = 'SELECT COUNT(*) as total FROM entries e WHERE e.user_id = ?'
+  const countParams: string[] = [userId]
+
+  if (filterType === 'tag' && filterValue) {
+    countQuery += ` AND e.id IN (SELECT et.entry_id FROM entry_tags et JOIN tags t ON et.tag_id = t.id WHERE t.name = ? AND t.user_id = ?)`
+    countParams.push(filterValue, userId)
+  } else if (filterType === 'client' && filterValue) {
+    countQuery += ` AND e.id IN (SELECT ec.entry_id FROM entry_clients ec JOIN clients cl ON ec.client_id = cl.id WHERE cl.name = ? AND cl.user_id = ?)`
+    countParams.push(filterValue, userId)
+  } else if (filterType === 'search' && filterValue) {
+    countQuery += ` AND e.raw_text LIKE ? ESCAPE '\\'`
+    countParams.push(`%${escapeLikePattern(filterValue)}%`)
+  } else if (filterType === 'date' && filterValue) {
+    countQuery += ` AND e.parsed_date = ?`
+    countParams.push(filterValue)
+  }
+
+  const countResult = await c.env.DB.prepare(countQuery).bind(...countParams).first<{ total: number }>()
+  const total = countResult?.total || 0
+
+  query += ` ORDER BY e.parsed_date DESC, e.parsed_time DESC, e.created_at DESC LIMIT ? OFFSET ?`
+  params.push(String(limit), String(offset))
 
   const entries = await c.env.DB.prepare(query).bind(...params).all()
 
@@ -112,7 +142,15 @@ entriesRoutes.get('/', async (c) => {
     }
   })
 
-  return c.json(results)
+  return c.json({
+    data: results,
+    pagination: {
+      total,
+      limit,
+      offset,
+      hasMore: offset + results.length < total
+    }
+  })
 })
 
 // Vytvořit záznam - optimalizováno s batch operacemi pro atomicitu

@@ -47,13 +47,24 @@ function formatWeekRange(dates: Date[]): string {
   return `${startStr} - ${endStr}`
 }
 
+interface PaginatedResponse {
+  data: EntryMinimal[]
+  pagination: {
+    total: number
+    limit: number
+    offset: number
+    hasMore: boolean
+  }
+}
+
 async function fetchEntries(): Promise<EntryMinimal[]> {
   const token = localStorage.getItem('token')
   const res = await fetch(`${API_BASE}/api/entries`, {
     headers: { Authorization: `Bearer ${token}` },
   })
   if (!res.ok) throw new Error('Nepodařilo se načíst záznamy')
-  return res.json()
+  const response: PaginatedResponse = await res.json()
+  return response.data
 }
 
 export default function WeekStats({ refreshKey, weekOffset, onWeekChange, onDayClick, selectedDate }: WeekStatsProps) {

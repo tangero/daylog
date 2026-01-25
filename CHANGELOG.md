@@ -5,6 +5,48 @@ Všechny významné změny v projektu Progressor jsou dokumentovány v tomto sou
 Formát je založen na [Keep a Changelog](https://keepachangelog.com/cs/1.0.0/),
 a projekt dodržuje [Semantic Versioning](https://semver.org/lang/cs/).
 
+## [0.6.0] - 2026-01-25
+
+### Bezpečnost
+- **httpOnly cookies** - JWT tokeny nyní v bezpečných httpOnly cookies místo localStorage
+- **Refresh token rotace** - automatická rotace refresh tokenů při každém obnovení
+- **Session management** - nová tabulka sessions pro správu přihlášení
+- **CSP hlavičky** - Content Security Policy pro ochranu proti XSS
+- **Security headers** - X-Frame-Options, X-Content-Type-Options, Referrer-Policy
+- **JWT hardening** - přidány claims iss, aud, jti pro lepší validaci
+- **Sort whitelist** - ochrana ORDER BY proti SQL injection
+
+### Přidáno
+- Endpoint `/api/auth/refresh` pro obnovení access tokenu
+- Endpoint `/api/auth/logout` pro odhlášení
+- Endpoint `/api/auth/logout-all` pro odhlášení ze všech zařízení
+- Paginace v API (`limit`, `offset`, `hasMore`)
+- ETag caching pro tags a clients endpoints
+
+### Vylepšeno
+- **React Query optimalizace** - staleTime 5 min, gcTime 10 min
+- **HTTP caching** - ETag + Cache-Control hlavičky
+- **Zod validace** - date range a pagination schémata
+- CORS omezen na konkrétní domény
+
+### Migrace
+- Nová migrace `0006_sessions.sql` pro sessions tabulku
+- Po nasazení spustit: `npm run db:migrate:prod`
+
+## [0.5.1] - 2026-01-24
+
+### Vylepšeno
+- Výkonnostní optimalizace frontendu
+- Databázové optimalizace: indexy, batch operace, eliminace N+1
+
+## [0.5.0] - 2026-01-23
+
+### Bezpečnost
+- Bcrypt hashování hesel (cost factor 12)
+- Rate limiting na auth endpointy
+- Zod validace vstupů
+- LIKE pattern escapování
+
 ## [0.4.0] - 2025-12-26
 
 ### Přidáno

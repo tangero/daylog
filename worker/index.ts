@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
-import { jwt } from 'hono/jwt'
 import { authRoutes } from './routes/auth'
+import { parseCookies } from './lib/cookies'
+import { verifyAccessToken } from './lib/jwt'
 import { entriesRoutes } from './routes/entries'
 import { tagsRoutes } from './routes/tags'
 import { clientsRoutes } from './routes/clients'
@@ -36,27 +37,66 @@ app.use('/*', async (c, next) => {
   await next()
 })
 
+// Security headers
+app.use('/*', async (c, next) => {
+  // Content Security Policy
+  c.header('Content-Security-Policy', [
+    "default-src 'self'",
+    "script-src 'self'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: https:",
+    "font-src 'self'",
+    "connect-src 'self' https://progressor-api.zandl.workers.dev",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'"
+  ].join('; '))
+  
+  // Další bezpečnostní hlavičky
+  c.header('X-Content-Type-Options', 'nosniff')
+  c.header('X-Frame-Options', 'DENY')
+  c.header('X-XSS-Protection', '1; mode=block')
+  c.header('Referrer-Policy', 'strict-origin-when-cross-origin')
+  
+  await next()
+})
+
 // Veřejné routy
 app.route('/api/auth', authRoutes)
 
 // Health check (veřejný)
 app.get('/api/health', (c) => c.json({ status: 'ok' }))
 
-// Chráněné routy - vyžadují JWT
+// JWT middleware pro chráněné routy - podporuje cookie i Authorization header
 app.use('/api/*', async (c, next) => {
   // Přeskočit auth a health routy
   if (c.req.path.startsWith('/api/auth') || c.req.path === '/api/health') {
     return next()
   }
 
-  // Kontrola, zda je přítomen Authorization header
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  // Zkusit token z cookie
+  const cookies = parseCookies(c.req.header('Cookie'))
+  let token = cookies['access_token']
+  
+  // Fallback na Authorization header (pro zpětnou kompatibilitu)
+  if (!token) {
+    const authHeader = c.req.header('Authorization')
+    if (authHeader?.startsWith('Bearer ')) {
+      token = authHeader.slice(7)
+    }
+  }
+
+  if (!token) {
     return c.json({ error: 'Unauthorized' }, 401)
   }
 
-  const jwtMiddleware = jwt({ secret: c.env.JWT_SECRET })
-  return jwtMiddleware(c, next)
+  const payload = await verifyAccessToken(token, c.env.JWT_SECRET)
+  if (!payload) {
+    return c.json({ error: 'Invalid or expired token' }, 401)
+  }
+
+  c.set('jwtPayload', { sub: payload.sub, email: payload.email })
+  return next()
 })
 
 app.route('/api/entries', entriesRoutes)

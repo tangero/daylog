@@ -46,6 +46,16 @@ interface EntryListProps {
   onEntryUpdated?: () => void
 }
 
+interface PaginatedResponse {
+  data: Entry[]
+  pagination: {
+    total: number
+    limit: number
+    offset: number
+    hasMore: boolean
+  }
+}
+
 async function fetchEntries(filter: EntryListProps['filter']): Promise<Entry[]> {
   const token = localStorage.getItem('token')
   const params = new URLSearchParams()
@@ -60,7 +70,8 @@ async function fetchEntries(filter: EntryListProps['filter']): Promise<Entry[]> 
   })
 
   if (!res.ok) throw new Error('Nepodařilo se načíst záznamy')
-  return res.json()
+  const response: PaginatedResponse = await res.json()
+  return response.data
 }
 
 async function deleteEntry(id: string): Promise<void> {

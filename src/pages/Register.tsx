@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { API_BASE } from '../lib/config'
-import { setToken } from '../lib/api'
+import { api, setToken } from '../lib/api'
 
 interface RegisterProps {
   onRegister: () => void
@@ -31,19 +30,11 @@ export default function Register({ onRegister }: RegisterProps) {
     setLoading(true)
 
     try {
-      const res = await fetch(`${API_BASE}/api/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      })
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Registrace selhala')
+      const result = await api.register(email, password)
+      // Token je v httpOnly cookie, uložíme jen pro zpětnou kompatibilitu
+      if ('token' in result) {
+        setToken((result as { token: string }).token)
       }
-
-      setToken(data.token)
       onRegister()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Něco se pokazilo')

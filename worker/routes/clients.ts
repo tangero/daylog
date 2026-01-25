@@ -32,7 +32,23 @@ clientsRoutes.get('/', async (c) => {
     ORDER BY count DESC, cl.name ASC
   `).bind(userId).all()
 
-  return c.json(result.results || [])
+  const results = result.results || []
+
+  // Generovat ETag z dat
+  const dataStr = JSON.stringify(results)
+  const encoder = new TextEncoder()
+  const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(dataStr))
+  const etag = Array.from(new Uint8Array(hashBuffer)).slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join('')
+
+  // Zkontrolovat If-None-Match
+  const ifNoneMatch = c.req.header('If-None-Match')
+  if (ifNoneMatch === etag) {
+    return c.body(null, 304)
+  }
+
+  c.header('ETag', etag)
+  c.header('Cache-Control', 'private, max-age=60')
+  return c.json(results)
 })
 
 // Aktualizovat klienta (hodinová sazba)

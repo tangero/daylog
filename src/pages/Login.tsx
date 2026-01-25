@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { API_BASE } from '../lib/config'
-import { setToken } from '../lib/api'
+import { api, setToken } from '../lib/api'
 
 interface LoginProps {
   onLogin: () => void
@@ -19,19 +18,11 @@ export default function Login({ onLogin }: LoginProps) {
     setLoading(true)
 
     try {
-      const res = await fetch(`${API_BASE}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      })
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Přihlášení selhalo')
+      const result = await api.login(email, password)
+      // Token je v httpOnly cookie, uložíme jen pro zpětnou kompatibilitu
+      if ('token' in result) {
+        setToken((result as { token: string }).token)
       }
-
-      setToken(data.token)
       onLogin()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Něco se pokazilo')

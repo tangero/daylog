@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import { dateRangeSchema } from '../lib/validation'
 
 interface Env {
   DB: D1Database
@@ -42,12 +43,12 @@ function formatDateCz(dateStr: string): string {
 // GET /api/stats/summary - Celkový přehled za období
 statsRoutes.get('/summary', async (c) => {
   const userId = c.get('jwtPayload').sub
-  const from = c.req.query('from')
-  const to = c.req.query('to')
-
-  if (!from || !to) {
-    return c.json({ error: 'Parametry from a to jsou povinné' }, 400)
+  
+  const queryResult = dateRangeSchema.safeParse({ from: c.req.query('from'), to: c.req.query('to') })
+  if (!queryResult.success) {
+    return c.json({ error: 'Neplatné parametry období' }, 400)
   }
+  const { from, to } = queryResult.data
 
   // Celkové souhrny
   const totalsResult = await c.env.DB.prepare(`
@@ -151,12 +152,16 @@ statsRoutes.get('/summary', async (c) => {
 statsRoutes.get('/billing', async (c) => {
   const userId = c.get('jwtPayload').sub
   const client = c.req.query('client')
-  const from = c.req.query('from')
-  const to = c.req.query('to')
   const hourlyRateParam = c.req.query('hourlyRate')
 
-  if (!client || !from || !to) {
-    return c.json({ error: 'Parametry client, from a to jsou povinné' }, 400)
+  const queryResult = dateRangeSchema.safeParse({ from: c.req.query('from'), to: c.req.query('to') })
+  if (!queryResult.success) {
+    return c.json({ error: 'Neplatné parametry období' }, 400)
+  }
+  const { from, to } = queryResult.data
+
+  if (!client) {
+    return c.json({ error: 'Parametr client je povinný' }, 400)
   }
 
   // Zjistit hodinovou sazbu klienta z DB (pokud není zadána)

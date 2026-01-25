@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react'
-import { isTokenValid, setAuthErrorHandler, getUserFromToken, getToken, removeToken } from './lib/api'
+import { checkAuth, setAuthErrorHandler, getUserFromToken, removeToken } from './lib/api'
 
 // Lazy loading stránek - rozdělení bundle
 const Landing = lazy(() => import('./pages/Landing'))
@@ -28,22 +28,18 @@ function App() {
   const [userEmail, setUserEmail] = useState<string | null>(null)
 
   useEffect(() => {
-    // Kontrola tokenu v localStorage - včetně expirace!
-    const valid = isTokenValid()
-    setIsAuthenticated(valid)
-
-    if (valid) {
-      const user = getUserFromToken()
+    const initAuth = async () => {
+      const user = await checkAuth()
+      setIsAuthenticated(!!user)
       setUserEmail(user?.email || null)
-    } else {
-      setUserEmail(null)
-      // Pokud token existuje ale není platný, smazat ho
-      if (getToken()) {
+      
+      if (!user) {
         removeToken()
       }
     }
-
-    // Nastavit handler pro automatické odhlášení při 401 chybě z API
+    
+    initAuth()
+    
     setAuthErrorHandler(() => {
       setIsAuthenticated(false)
       setUserEmail(null)
