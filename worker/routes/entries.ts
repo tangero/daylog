@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { z } from 'zod'
+import { escapeLikePattern } from '../lib/validation'
 
 interface Env {
   DB: D1Database
@@ -82,8 +83,8 @@ entriesRoutes.get('/', async (c) => {
     `
     params.push(filterValue, userId)
   } else if (filterType === 'search' && filterValue) {
-    query += ` AND e.raw_text LIKE ?`
-    params.push(`%${filterValue}%`)
+    query += ` AND e.raw_text LIKE ? ESCAPE '\\'`
+    params.push(`%${escapeLikePattern(filterValue)}%`)
   } else if (filterType === 'date' && filterValue) {
     query += ` AND e.parsed_date = ?`
     params.push(filterValue)

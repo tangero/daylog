@@ -15,9 +15,19 @@ export interface Env {
 
 const app = new Hono<{ Bindings: Env }>()
 
-// CORS - ruční implementace
+// CORS - omezeno na povolené domény
+const ALLOWED_ORIGINS = [
+  'https://progressor.work',
+  'http://localhost:5173',
+  'http://localhost:4173'
+]
+
 app.use('/*', async (c, next) => {
-  c.header('Access-Control-Allow-Origin', '*')
+  const origin = c.req.header('Origin')
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    c.header('Access-Control-Allow-Origin', origin)
+    c.header('Access-Control-Allow-Credentials', 'true')
+  }
   c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
   c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
   if (c.req.method === 'OPTIONS') {
