@@ -52,7 +52,8 @@ interface ClientBillingProps {
 async function fetchClients(): Promise<Client[]> {
   const token = localStorage.getItem('token')
   const res = await fetch(`${API_BASE}/api/clients`, {
-    headers: { Authorization: `Bearer ${token}` }
+    headers: { Authorization: `Bearer ${token}` },
+    credentials: 'include',
   })
   if (!res.ok) return []
   return res.json()
@@ -62,7 +63,7 @@ async function fetchBilling(client: string, from: string, to: string): Promise<B
   const token = localStorage.getItem('token')
   const res = await fetch(
     `${API_BASE}/api/stats/billing?client=${encodeURIComponent(client)}&from=${from}&to=${to}`,
-    { headers: { Authorization: `Bearer ${token}` } }
+    { headers: { Authorization: `Bearer ${token}` }, credentials: 'include' }
   )
   if (!res.ok) throw new Error('Nepodařilo se načíst vyúčtování')
   return res.json()
@@ -76,6 +77,7 @@ async function updateClientRate(name: string, hourlyRate: number): Promise<void>
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`
     },
+    credentials: 'include',
     body: JSON.stringify({ hourlyRate })
   })
   if (!res.ok) throw new Error('Nepodařilo se uložit sazbu')
@@ -119,7 +121,8 @@ export default function ClientBilling({ period, selectedClient, onClientChange }
     })
 
     const res = await fetch(`${API_BASE}/api/stats/export?${params}`, {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
+      credentials: 'include',
     })
 
     const blob = await res.blob()

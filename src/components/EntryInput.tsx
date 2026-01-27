@@ -31,6 +31,7 @@ async function fetchTags(): Promise<Tag[]> {
   const token = localStorage.getItem('token')
   const res = await fetch(`${API_BASE}/api/tags`, {
     headers: { Authorization: `Bearer ${token}` },
+    credentials: 'include',
   })
   if (!res.ok) return []
   return res.json()
@@ -41,6 +42,7 @@ async function fetchClients(): Promise<Client[]> {
   const token = localStorage.getItem('token')
   const res = await fetch(`${API_BASE}/api/clients`, {
     headers: { Authorization: `Bearer ${token}` },
+    credentials: 'include',
   })
   if (!res.ok) return []
   return res.json()
@@ -203,6 +205,7 @@ export default function EntryInput({ onEntryAdded }: EntryInputProps) {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({
           rawText: parsed.rawText,
           date: formatDateLocal(parsed.date),

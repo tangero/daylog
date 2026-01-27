@@ -29,7 +29,8 @@ interface StatsSummaryProps {
 async function fetchStats(from: string, to: string): Promise<StatsSummaryData> {
   const token = localStorage.getItem('token')
   const res = await fetch(`${API_BASE}/api/stats/summary?from=${from}&to=${to}`, {
-    headers: { Authorization: `Bearer ${token}` }
+    headers: { Authorization: `Bearer ${token}` },
+    credentials: 'include',
   })
   if (!res.ok) throw new Error('Nepodařilo se načíst statistiky')
   return res.json()

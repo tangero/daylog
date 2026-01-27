@@ -67,6 +67,7 @@ async function fetchEntries(filter: EntryListProps['filter']): Promise<Entry[]> 
 
   const res = await fetch(`${API_BASE}/api/entries?${params}`, {
     headers: { Authorization: `Bearer ${token}` },
+    credentials: 'include',
   })
 
   if (!res.ok) throw new Error('Nepodařilo se načíst záznamy')
@@ -79,6 +80,7 @@ async function deleteEntry(id: string): Promise<void> {
   const res = await fetch(`${API_BASE}/api/entries/${id}`, {
     method: 'DELETE',
     headers: { Authorization: `Bearer ${token}` },
+    credentials: 'include',
   })
   if (!res.ok) throw new Error('Nepodařilo se smazat záznam')
 }
@@ -99,6 +101,7 @@ async function updateEntry(id: string, data: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
+    credentials: 'include',
     body: JSON.stringify(data),
   })
   if (!res.ok) throw new Error('Nepodařilo se upravit záznam')

@@ -19,6 +19,7 @@ async function fetchClients(): Promise<Client[]> {
   const token = localStorage.getItem('token')
   const res = await fetch(`${API_BASE}/api/clients`, {
     headers: { Authorization: `Bearer ${token}` },
+    credentials: 'include',
   })
   if (!res.ok) throw new Error('Nepodařilo se načíst klienty')
   return res.json()

@@ -18,6 +18,7 @@ async function fetchTags(): Promise<Tag[]> {
   const token = localStorage.getItem('token')
   const res = await fetch(`${API_BASE}/api/tags`, {
     headers: { Authorization: `Bearer ${token}` },
+    credentials: 'include',
   })
   if (!res.ok) throw new Error('Nepodařilo se načíst tagy')
   return res.json()

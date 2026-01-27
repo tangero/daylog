@@ -18,6 +18,7 @@ async function fetchProject(tagName: string): Promise<Project> {
   const token = localStorage.getItem('token')
   const res = await fetch(`${API_BASE}/api/projects/${encodeURIComponent(tagName)}`, {
     headers: { Authorization: `Bearer ${token}` },
+    credentials: 'include',
   })
   if (!res.ok) throw new Error('Nepodařilo se načíst projekt')
   return res.json()
@@ -31,6 +32,7 @@ async function saveProject(tagName: string, data: { name: string | null; descrip
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
+    credentials: 'include',
     body: JSON.stringify(data),
   })
   if (!res.ok) throw new Error('Nepodařilo se uložit projekt')
