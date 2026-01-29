@@ -3,7 +3,7 @@ import { Context } from 'hono'
 const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: true,
-  sameSite: 'Lax' as const,
+  sameSite: 'None' as const,  // Nutné pro cross-origin cookies (frontend na jiné doméně než API)
   path: '/',
 }
 
