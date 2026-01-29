@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { API_BASE } from '../lib/config'
+import { getAuthHeaders } from '../lib/api'
 import ProjectDetail from '../components/ProjectDetail'
 
 interface HashtagsProps {
@@ -15,9 +16,8 @@ interface Tag {
 }
 
 async function fetchTags(): Promise<Tag[]> {
-  const token = localStorage.getItem('token')
   const res = await fetch(`${API_BASE}/api/tags`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: getAuthHeaders(),
     credentials: 'include',
   })
   if (!res.ok) throw new Error('Nepodařilo se načíst tagy')

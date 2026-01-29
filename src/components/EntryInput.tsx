@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useEntryParser } from '../hooks/useEntryParser'
 import { formatDate, formatDuration } from '../lib/parser'
 import { API_BASE } from '../lib/config'
+import { getAuthHeaders } from '../lib/api'
 
 // Lokální formátování data (bez UTC posunu)
 function formatDateLocal(d: Date): string {
@@ -28,9 +29,8 @@ interface Client {
 
 // Načtení tagů
 async function fetchTags(): Promise<Tag[]> {
-  const token = localStorage.getItem('token')
   const res = await fetch(`${API_BASE}/api/tags`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: getAuthHeaders(),
     credentials: 'include',
   })
   if (!res.ok) return []
@@ -39,9 +39,8 @@ async function fetchTags(): Promise<Tag[]> {
 
 // Načtení klientů
 async function fetchClients(): Promise<Client[]> {
-  const token = localStorage.getItem('token')
   const res = await fetch(`${API_BASE}/api/clients`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: getAuthHeaders(),
     credentials: 'include',
   })
   if (!res.ok) return []
@@ -198,12 +197,11 @@ export default function EntryInput({ onEntryAdded }: EntryInputProps) {
     setLoading(true)
 
     try {
-      const token = localStorage.getItem('token')
       const res = await fetch(`${API_BASE}/api/entries`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          ...getAuthHeaders(),
         },
         credentials: 'include',
         body: JSON.stringify({

@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { API_BASE } from '../lib/config'
 import { formatDuration } from '../lib/parser'
-import type { EntryMinimal } from '../lib/api'
+import { getAuthHeaders, type EntryMinimal } from '../lib/api'
 
 interface WeekStatsProps {
   refreshKey: number
@@ -58,9 +58,8 @@ interface PaginatedResponse {
 }
 
 async function fetchEntries(): Promise<EntryMinimal[]> {
-  const token = localStorage.getItem('token')
   const res = await fetch(`${API_BASE}/api/entries`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: getAuthHeaders(),
     credentials: 'include',
   })
   if (!res.ok) throw new Error('Nepodařilo se načíst záznamy')

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { API_BASE } from '../../lib/config'
 import { formatDuration } from '../../lib/parser'
+import { getAuthHeaders } from '../../lib/api'
 
 interface Period {
   from: string
@@ -27,9 +28,8 @@ interface StatsSummaryProps {
 }
 
 async function fetchStats(from: string, to: string): Promise<StatsSummaryData> {
-  const token = localStorage.getItem('token')
   const res = await fetch(`${API_BASE}/api/stats/summary?from=${from}&to=${to}`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: getAuthHeaders(),
     credentials: 'include',
   })
   if (!res.ok) throw new Error('Nepodařilo se načíst statistiky')

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { API_BASE } from '../../lib/config'
 import { formatDuration } from '../../lib/parser'
+import { getAuthHeaders } from '../../lib/api'
 
 interface Period {
   from: string
@@ -50,9 +51,8 @@ interface ClientBillingProps {
 }
 
 async function fetchClients(): Promise<Client[]> {
-  const token = localStorage.getItem('token')
   const res = await fetch(`${API_BASE}/api/clients`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: getAuthHeaders(),
     credentials: 'include',
   })
   if (!res.ok) return []
@@ -60,22 +60,20 @@ async function fetchClients(): Promise<Client[]> {
 }
 
 async function fetchBilling(client: string, from: string, to: string): Promise<BillingData> {
-  const token = localStorage.getItem('token')
   const res = await fetch(
     `${API_BASE}/api/stats/billing?client=${encodeURIComponent(client)}&from=${from}&to=${to}`,
-    { headers: { Authorization: `Bearer ${token}` }, credentials: 'include' }
+    { headers: getAuthHeaders(), credentials: 'include' }
   )
   if (!res.ok) throw new Error('Nepodařilo se načíst vyúčtování')
   return res.json()
 }
 
 async function updateClientRate(name: string, hourlyRate: number): Promise<void> {
-  const token = localStorage.getItem('token')
   const res = await fetch(`${API_BASE}/api/clients/${encodeURIComponent(name)}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`
+      ...getAuthHeaders()
     },
     credentials: 'include',
     body: JSON.stringify({ hourlyRate })

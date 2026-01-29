@@ -25,6 +25,12 @@ export function removeToken(): void {
   localStorage.removeItem(TOKEN_KEY)
 }
 
+// Helper pro vytvoření auth headers - používá cookie jako primární metodu
+export function getAuthHeaders(): HeadersInit {
+  const token = getToken()
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
 // Dekódování JWT tokenu (bez ověření podpisu - to dělá server)
 interface TokenPayload {
   sub: string

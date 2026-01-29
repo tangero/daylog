@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import DOMPurify from 'dompurify'
 import { API_BASE } from '../lib/config'
+import { getAuthHeaders } from '../lib/api'
 
 interface Project {
   tagName: string
@@ -15,9 +16,8 @@ interface ProjectDetailProps {
 }
 
 async function fetchProject(tagName: string): Promise<Project> {
-  const token = localStorage.getItem('token')
   const res = await fetch(`${API_BASE}/api/projects/${encodeURIComponent(tagName)}`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: getAuthHeaders(),
     credentials: 'include',
   })
   if (!res.ok) throw new Error('Nepodařilo se načíst projekt')
@@ -25,12 +25,11 @@ async function fetchProject(tagName: string): Promise<Project> {
 }
 
 async function saveProject(tagName: string, data: { name: string | null; description: string | null }): Promise<void> {
-  const token = localStorage.getItem('token')
   const res = await fetch(`${API_BASE}/api/projects/${encodeURIComponent(tagName)}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
+      ...getAuthHeaders(),
     },
     credentials: 'include',
     body: JSON.stringify(data),

@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { formatDuration, parseEntry } from '../lib/parser'
 import { API_BASE } from '../lib/config'
+import { getAuthHeaders } from '../lib/api'
 
 // Lokální formátování data (bez UTC posunu)
 function formatDateLocal(d: Date): string {
@@ -57,7 +58,6 @@ interface PaginatedResponse {
 }
 
 async function fetchEntries(filter: EntryListProps['filter']): Promise<Entry[]> {
-  const token = localStorage.getItem('token')
   const params = new URLSearchParams()
 
   if (filter.type !== 'all' && filter.value) {
@@ -66,7 +66,7 @@ async function fetchEntries(filter: EntryListProps['filter']): Promise<Entry[]> 
   }
 
   const res = await fetch(`${API_BASE}/api/entries?${params}`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: getAuthHeaders(),
     credentials: 'include',
   })
 
@@ -76,10 +76,9 @@ async function fetchEntries(filter: EntryListProps['filter']): Promise<Entry[]> 
 }
 
 async function deleteEntry(id: string): Promise<void> {
-  const token = localStorage.getItem('token')
   const res = await fetch(`${API_BASE}/api/entries/${id}`, {
     method: 'DELETE',
-    headers: { Authorization: `Bearer ${token}` },
+    headers: getAuthHeaders(),
     credentials: 'include',
   })
   if (!res.ok) throw new Error('Nepodařilo se smazat záznam')
@@ -94,12 +93,11 @@ async function updateEntry(id: string, data: {
   hashtags: string[]
   clients: string[]
 }): Promise<void> {
-  const token = localStorage.getItem('token')
   const res = await fetch(`${API_BASE}/api/entries/${id}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
+      ...getAuthHeaders(),
     },
     credentials: 'include',
     body: JSON.stringify(data),

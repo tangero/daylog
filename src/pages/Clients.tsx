@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { API_BASE } from '../lib/config'
 import { formatDuration } from '../lib/parser'
+import { getAuthHeaders } from '../lib/api'
 
 interface ClientsProps {
   onLogout: () => void
@@ -16,9 +17,8 @@ interface Client {
 }
 
 async function fetchClients(): Promise<Client[]> {
-  const token = localStorage.getItem('token')
   const res = await fetch(`${API_BASE}/api/clients`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: getAuthHeaders(),
     credentials: 'include',
   })
   if (!res.ok) throw new Error('Nepodařilo se načíst klienty')
