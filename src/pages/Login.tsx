@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { api, setToken } from '../lib/api'
+import { api, setToken, removeToken } from '../lib/api'
+import { queryClient } from '../main'
 
 interface LoginProps {
   onLogin: () => void
@@ -18,10 +19,13 @@ export default function Login({ onLogin }: LoginProps) {
     setLoading(true)
 
     try {
+      // Nejdřív smazat starý token a cache, aby se nepomíchala data
+      removeToken()
+      queryClient.clear()
       const result = await api.login(email, password)
-      // Token je v httpOnly cookie, uložíme jen pro zpětnou kompatibilitu
-      if ('token' in result) {
-        setToken((result as { token: string }).token)
+      // Token je v httpOnly cookie, uložíme i do localStorage jako fallback
+      if (result.token) {
+        setToken(result.token)
       }
       onLogin()
     } catch (err) {

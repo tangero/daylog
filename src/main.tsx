@@ -6,7 +6,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import App from './App'
 import './index.css'
 
-const queryClient = new QueryClient({
+export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000, // 5 minut - data jsou "čerstvá"

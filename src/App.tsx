@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react'
 import { checkAuth, setAuthErrorHandler, getUserFromToken, removeToken } from './lib/api'
+import { queryClient } from './main'
 
 // Lazy loading stránek - rozdělení bundle
 const Landing = lazy(() => import('./pages/Landing'))
@@ -43,6 +44,7 @@ function App() {
     setAuthErrorHandler(() => {
       setIsAuthenticated(false)
       setUserEmail(null)
+      queryClient.clear() // Vyčistit cache při auth chybě
     })
   }, [])
 
@@ -56,6 +58,7 @@ function App() {
   const handleLogout = useCallback(() => {
     setIsAuthenticated(false)
     setUserEmail(null)
+    queryClient.clear() // Vyčistit cache při odhlášení
   }, [])
 
   // Loading stav
