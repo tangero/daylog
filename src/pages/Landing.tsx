@@ -388,7 +388,7 @@ export default function Landing() {
 
             <div className="flex items-center gap-6 text-sm text-gray-600">
               <Link to="/changelog" className="hover:text-primary-600 transition-colors">
-                Changelog (v0.5.1)
+                Changelog (v0.6.1)
               </Link>
               <span className="text-gray-400">•</span>
               <span>&copy; 2025-2026 Patrick Zandl</span>
