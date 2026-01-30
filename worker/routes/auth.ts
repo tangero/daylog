@@ -114,7 +114,8 @@ authRoutes.post('/register', async (c) => {
     // Nastavit cookies
     setAuthCookies(c, accessToken, refreshToken)
 
-    return c.json({ user: { id, email } })
+    // Vrátit token i v odpovědi pro localStorage (fallback pro prohlížeče blokující cross-origin cookies)
+    return c.json({ user: { id, email }, token: accessToken })
   } catch (error) {
     console.error('[REGISTER] Error:', error)
     return c.json({ error: String(error) }, 500)
@@ -176,7 +177,8 @@ authRoutes.post('/login', async (c) => {
     // Nastavit cookies
     setAuthCookies(c, accessToken, refreshToken)
 
-    return c.json({ user: { id: user.id, email: user.email } })
+    // Vrátit token i v odpovědi pro localStorage (fallback pro prohlížeče blokující cross-origin cookies)
+    return c.json({ user: { id: user.id, email: user.email }, token: accessToken })
   } catch (error) {
     console.error('[LOGIN] Error:', error)
     return c.json({ error: String(error) }, 500)
@@ -345,7 +347,8 @@ authRoutes.post('/refresh', async (c) => {
   const accessToken = await createAccessToken(session.user_id, session.email, c.env.JWT_SECRET)
   setAuthCookies(c, accessToken, newRefreshToken)
 
-  return c.json({ user: { id: session.user_id, email: session.email } })
+  // Vrátit token i v odpovědi pro localStorage (fallback pro prohlížeče blokující cross-origin cookies)
+  return c.json({ user: { id: session.user_id, email: session.email }, token: accessToken })
 })
 
 // Odhlášení

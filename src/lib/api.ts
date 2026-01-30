@@ -92,10 +92,14 @@ export async function checkAuth(): Promise<{ id: string; email: string } | null>
   if (localUser && isTokenValid()) {
     return localUser
   }
-  
+
   // Zkusit refresh přes cookie
   try {
     const result = await api.refresh()
+    // Uložit token do localStorage jako fallback pro prohlížeče blokující cross-origin cookies
+    if (result.token) {
+      setToken(result.token)
+    }
     return result.user
   } catch {
     return null
@@ -150,19 +154,19 @@ export async function apiRequest<T>(
 export const api = {
   // Auth
   login: (email: string, password: string) =>
-    apiRequest<{ user: { id: string; email: string } }>('/api/auth/login', {
+    apiRequest<{ user: { id: string; email: string }; token?: string }>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     }),
 
   register: (email: string, password: string) =>
-    apiRequest<{ user: { id: string; email: string } }>('/api/auth/register', {
+    apiRequest<{ user: { id: string; email: string }; token?: string }>('/api/auth/register', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     }),
 
   refresh: () =>
-    apiRequest<{ user: { id: string; email: string } }>('/api/auth/refresh', {
+    apiRequest<{ user: { id: string; email: string }; token?: string }>('/api/auth/refresh', {
       method: 'POST',
     }),
 
